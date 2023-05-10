@@ -32,3 +32,12 @@ in ```environment-list.txt```.
      
 cerates a new environment from the frozen configuration.
 
+## Scripts
+
+After the environment is created and activated do
+```
+pip install torch_geometric
+pip install torch_cluster
+```
+
+
