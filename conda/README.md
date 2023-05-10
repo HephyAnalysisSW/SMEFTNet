@@ -28,7 +28,7 @@ creates a new environment by resolving dependencies.
 For reproducibility the resolved dependencies are frozen
 in ```environment-list.txt```.
 
-     create_environment.sh [env name]
+    create_environment.sh [env name]
      
 cerates a new environment from the frozen configuration.
 
