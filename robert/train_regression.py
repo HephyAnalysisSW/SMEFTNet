@@ -24,6 +24,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 exec("import configs.%s as config"%args.config)
 
 import sys
+sys.path.insert(0, '..')
 import tools.user as user
 
 # reproducibility

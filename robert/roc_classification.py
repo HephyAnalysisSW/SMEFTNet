@@ -10,6 +10,7 @@ import pickle
 import array
 
 import sys
+sys.path.insert(0, '..')
 import tools.user as user
 import tools.syncer as syncer
 

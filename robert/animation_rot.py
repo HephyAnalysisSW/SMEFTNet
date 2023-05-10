@@ -3,6 +3,7 @@ import numpy as np
 import math 
 import array
 import sys, os
+sys.path.insert(0, '..')
 import tools.syncer as syncer
 import tools.user as user
 import tools.helpers as helpers
@@ -41,7 +42,7 @@ plot_directory_ = os.path.join( user.plot_directory, 'SMEFTNet', "scatter")
 os.makedirs( plot_directory_, exist_ok=True)
 
 ROOT.gStyle.SetPalette(ROOT.kBird)
-ROOT.gROOT.LoadMacro(os.path.join( dir_path, "tools/scripts/tdrstyle.C"))
+ROOT.gROOT.LoadMacro(os.path.join( dir_path, "../tools/scripts/tdrstyle.C"))
 ROOT.setTDRStyle()
 
 # Load model

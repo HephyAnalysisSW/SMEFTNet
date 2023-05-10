@@ -9,6 +9,7 @@ import pickle
 import glob
 
 import sys
+sys.path.insert(0, '..')
 import tools.user as user
 
 import argparse

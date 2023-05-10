@@ -3,6 +3,7 @@ import numpy as np
 import math 
 import array
 import sys, os
+sys.path.insert(0, '..')
 import glob
 import tools.syncer as syncer
 import tools.user as user
@@ -20,15 +21,15 @@ np.random.seed(0)
 delay  = 50/5
 
 logZ = True
-#training_name  = "onlyR_try2"
-#config_name    = "onlyR"
-#xmin, xmax = 0, 1.5
-#varName = "R"
-#index_truth = 0
-#index_out   = 0
-#every = 2
-#def func( out ):
-#    return out[:, 0] 
+training_name  = "onlyR_try2"
+config_name    = "onlyR"
+xmin, xmax = 0, 1.5
+varName = "R"
+index_truth = 0
+index_out   = 0
+every = 2
+def func( out ):
+    return out[:, 0] 
 
 #def func( out ):
 #    return out[:, 0] 
@@ -52,22 +53,22 @@ logZ = True
 #def func( out ):
 #    return torch.atan2( out[:,0], out[:,1] )
 
-logZ=False
-training_name  = "onlyGamma_twoProng_sinCosShark"
-config_name    = "onlyGamma_twoProng"
-xmin, xmax = -math.pi, math.pi
-varName = "#gamma"
-index_truth = 1
-index_out   = 0
-every = 10
+#logZ=False
+#training_name  = "onlyGamma_twoProng_sinCosShark"
+#config_name    = "onlyGamma_twoProng"
+#xmin, xmax = -math.pi, math.pi
+#varName = "#gamma"
+#index_truth = 1
+#index_out   = 0
+#every = 10
+##def func( out ):
+##    return torch.atan2( out[:,0], out[:,1] )
 #def func( out ):
-#    return torch.atan2( out[:,0], out[:,1] )
-def func( out ):
-    return out[:,0]
+#    return out[:,0]
 
 exec("import configs.regressJet_%s as config"%config_name)
 
-pts, angles, truth = config.data_model.getEvents(5000)
+pts, angles, _, truth = config.data_model.getEvents(5000)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -75,7 +76,7 @@ plot_directory_ = os.path.join( user.plot_directory, 'SMEFTNet', "regression", t
 os.makedirs( plot_directory_, exist_ok=True)
 
 ROOT.gStyle.SetPalette(ROOT.kBird)
-ROOT.gROOT.LoadMacro(os.path.join( dir_path, "tools/scripts/tdrstyle.C"))
+ROOT.gROOT.LoadMacro(os.path.join( dir_path, "../tools/scripts/tdrstyle.C"))
 ROOT.setTDRStyle()
 
 torch.autograd.set_grad_enabled(False)
