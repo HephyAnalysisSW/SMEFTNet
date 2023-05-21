@@ -175,7 +175,7 @@ if __name__=="__main__":
     #print ("Auto clip efficiency (training) %4.3f is %4.3f"%( auto_clip, len(x)/len_before ) )
 
     print ("Wilson coefficients:", weightInfo.variables )
-    print ("Features of the first event:\n" + "\n".join( ["%25s = %4.3f"%(name, value) for name, value in zip(feature_names, x[0])] ) )
+    #print ("Features of the first event:\n" + "\n".join( ["%25s = %4.3f"%(name, value) for name, value in zip(feature_names, x[0])] ) )
     prstr = {0:'constant', 1:'linear', 2:'quadratic'}
     print ("Weight coefficients(!) of the first event:\n"+"\n".join( ["%30s = %4.3E"%( prstr[len(comb)] + " " +",".join(comb), w[comb][0]) for comb in weightInfo.combinations] ) )
 
