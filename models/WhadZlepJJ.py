@@ -117,15 +117,15 @@ tex = {'cHDD':'C_{HDD}', 'cHbox':'C_{H#box}', 'cW':'C_{W}', 'cWtil':'C_{Wtil}', 
 
 eft_plot_points = [
     {'color':ROOT.kBlack,       'eft':sm, 'tex':"SM"},
-    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
-    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
-    {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
-    {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
-    {'color':ROOT.kBlue+2,      'eft':make_eft(cHW=1),    'tex':"C_{HW}=1" },
-    {'color':ROOT.kBlue-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
-    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
-    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
-    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
+    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHDD=5),   'tex':"C_{HDD}=5" },
+    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHbox=5),  'tex':"C_{H#box}=5" },
+    {'color':ROOT.kGreen-4,     'eft':make_eft(cW=5),     'tex':"C_{W}=5" },
+    {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=5),  'tex':"C_{Wtil}=5" },
+    {'color':ROOT.kBlue+2,      'eft':make_eft(cHW=5),    'tex':"C_{HW}=5" },
+    {'color':ROOT.kBlue-4,      'eft':make_eft(cHWtil=5),    'tex':"C_{HWtil}=5" },
+    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=5),    'tex':"C_{HWB}=5" },
+    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=5),    'tex':"C_{HB}=5" },
+    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=5),    'tex':"C_{HWBtil}=5" },
     ]
 
 plot_options =  {

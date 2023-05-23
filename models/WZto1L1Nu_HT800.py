@@ -14,7 +14,7 @@ from tools.WeightInfo    import WeightInfo
 selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_matched_hadV_parton<0.6)
 
 data_generator =  DataGenerator(
-    input_files = ["/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v1/WhadZlepJJ/WhadZlepJJ_*.root"],
+    input_files = ["/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v1/WZto1L1Nu_HT800/WZto1L1Nu_HT800_*.root"],
         n_split = 1,
         splitting_strategy = "files",
         selection   = selection,
@@ -41,7 +41,7 @@ data_generator =  DataGenerator(
                     "p_C"]
     )
 
-reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WhadZlepJJ_EWK_LO_SM_mjj100_pTj10_reweight_card.pkl'
+reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto1L1Nu_HT800_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
 default_eft_parameters = {p:0 for p in weightInfo.variables}
@@ -112,20 +112,29 @@ def getEvents( nTraining ):
 
     return f, v, w 
 
-# cHDD 1 cHbox 1 cW 1 cWtil 1 cHW 1 cHWtil 1 cHWB 1 cHB 1 cHWBtil 1
-tex = {'cHDD':'C_{HDD}', 'cHbox':'C_{H#box}', 'cW':'C_{W}', 'cWtil':'C_{Wtil}', 'cHW':'C_{HW}', 'cHWtil':'C_{HWtil}', 'cHWB':'C_{HWB}', 'cHB':'C_{HB}', 'cHWBtil':'C_{HWBtil}'}
+#cHj1 1 cHj3 1 cHu 1 cHd 1 cHQ1 1 cHQ3 1 cHb 1 cHudRe 1 cuWRe 1 cuBRe 1 cuHRe 1 cW 1 cWtil 1 cH 1 cHbox 1 cHDD 1 cHW 1 cHB 1 cHWB 1 cHWtil 1 cHBtil 1 cHWBtil 1
 
+tex = { 'cHj1':'C_{Hj}^{(1)}','cHj3':'C_{Hj}^{(3)}', 'cHu':'C_{Hu}','cHd':'C_{Hd}', 'cHQ3':'C_{HQ}^{(3)}', 'cHb':'C_{Hb}','cHudRe':'C_{Hud}^{Re}','cuWRe':'C_{uW}^{Re}', 'cuBRe':'C_{uB}^{Re}', 'cuHRe':'C_{uH}^{Re}', 'cHDD':'C_{HDD}', 'cHbox':'C_{H#box}', 'cH':'C_{H}', 'cW':'C_{W}', 'cWtil':'C_{Wtil}', 'cHW':'C_{HW}', 'cHWtil':'C_{HWtil}', 'cHWB':'C_{HWB}', 'cHB':'C_{HB}', 'cHWBtil':'C_{HWBtil}', 'cHBtil':'C_{HBtil}'}
 eft_plot_points = [
     {'color':ROOT.kBlack,       'eft':sm, 'tex':"SM"},
-    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
-    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
-    {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
-    {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
-    {'color':ROOT.kBlue+2,      'eft':make_eft(cHW=1),    'tex':"C_{HW}=1" },
-    {'color':ROOT.kBlue-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
-    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
-    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
-    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
+#    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
+#    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
+#    {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
+#    {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
+#    {'color':ROOT.kBlue+2,      'eft':make_eft(cHW=1),    'tex':"C_{HW}=1" },
+#    {'color':ROOT.kBlue-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
+#    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
+#    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
+#    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
+    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHj1=1),   'tex':"C_{Hj}^{(1)}=1" },
+    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHj3=1),  'tex':"C_{Hj}^{(3)}=1" },
+    {'color':ROOT.kGreen-4,     'eft':make_eft(cHu=1),     'tex':"C_{Hu}=1" },
+    {'color':ROOT.kGreen+2,     'eft':make_eft(cHd=1),  'tex':"C_{Hd}=1" },
+    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
+    {'color':ROOT.kBlue-4,      'eft':make_eft(cHb=1),    'tex':"C_{Hb}=1" },
+    {'color':ROOT.kCyan+2,      'eft':make_eft(cHudRe=1),    'tex':"C_{Hud}^{(Re)}=1" },
+    {'color':ROOT.kCyan-4,      'eft':make_eft(cuWRe=1),    'tex':"C_{uW}^{(Re)}=1" },
+    {'color':ROOT.kOrange+2,    'eft':make_eft(cuBRe=1),    'tex':"C_{HuB}^{(Re)}=1" },
     ]
 
 plot_options =  {
