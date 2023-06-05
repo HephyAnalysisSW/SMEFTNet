@@ -20,7 +20,7 @@ selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_m
 import config
 
 data_generator =  DataGenerator(
-    input_files = [os.path.join( config.data_directory, "WhadZlepJJ/WhadZlepJJ_*.root")],
+    input_files = [os.path.join( config.data_directory, "WlepZhadJJ/WlepZhadJJ_*.root")],
         n_split = 1,
         splitting_strategy = "files",
         selection   = selection,
@@ -47,7 +47,7 @@ data_generator =  DataGenerator(
                     "p_C"]
     )
 
-reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WhadZlepJJNoRef_reweight_card.pkl'
+reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WlepZhadJJNoRef_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
 default_eft_parameters = {p:0 for p in weightInfo.variables}
