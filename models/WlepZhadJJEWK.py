@@ -19,34 +19,35 @@ selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_m
 
 import config
 
-from plot_options import *
-
 data_generator =  DataGenerator(
-    input_files = [os.path.join( config.data_directory, "WZto1L1Nu_HT300/WZto1L1Nu_HT300_*.root")],
+    input_files = [os.path.join( config.data_directory, "WlepZhadJJ/WlepZhadJJ_*.root")],
         n_split = 1,
         splitting_strategy = "files",
         selection   = selection,
-        branches = list(plot_options.keys()) + ["p_C"]
-#                    "parton_hadV_pt", "parton_hadV_eta", "parton_hadV_angle_phi", "parton_hadV_mass", "parton_hadV_pdgId", "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
-#                    "parton_hadV_q1_pt", "parton_hadV_q1_eta", "parton_hadV_q1_phi", "parton_hadV_q1_mass", "parton_hadV_q1_pdgId", 
-#                    "parton_hadV_q2_pt", "parton_hadV_q2_eta", "parton_hadV_q2_phi", "parton_hadV_q2_mass", "parton_hadV_q2_pdgId", 
-#                    "parton_lepV_pt", "parton_lepV_eta", "parton_lepV_phi", "parton_lepV_mass", "parton_lepV_pdgId", 
-#                    "parton_lepV_l1_pt", "parton_lepV_l1_eta", "parton_lepV_l1_phi", "parton_lepV_l1_mass", "parton_lepV_l1_pdgId", 
-#                    "parton_lepV_l2_pt", "parton_lepV_l2_eta", "parton_lepV_l2_phi", "parton_lepV_l2_mass", "parton_lepV_l2_pdgId", 
-#                    "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
-#
-#                    "delphesJet_pt", "delphesJet_eta", "delphesJet_phi", "delphesJet_mass", "delphesJet_nConstituents",
-#
-#                    "delphesJet_SDmass", "delphesJet_SDsubjet0_eta", "delphesJet_SDsubjet0_deltaEta", "delphesJet_SDsubjet0_phi", "delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
-#                    "delphesJet_SDsubjet0_mass", "delphesJet_SDsubjet1_eta", "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_phi", "delphesJet_SDsubjet1_deltaPhi", 
-#                    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
-#                    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
-#                    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
-#
-#                    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
+        branches = [
+
+                    "parton_hadV_pt", "parton_hadV_eta", "parton_hadV_angle_phi", "parton_hadV_mass", "parton_hadV_pdgId", "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
+                    "parton_hadV_q1_pt", "parton_hadV_q1_eta", "parton_hadV_q1_phi", "parton_hadV_q1_mass", "parton_hadV_q1_pdgId", 
+                    "parton_hadV_q2_pt", "parton_hadV_q2_eta", "parton_hadV_q2_phi", "parton_hadV_q2_mass", "parton_hadV_q2_pdgId", 
+                    "parton_lepV_pt", "parton_lepV_eta", "parton_lepV_phi", "parton_lepV_mass", "parton_lepV_pdgId", 
+                    "parton_lepV_l1_pt", "parton_lepV_l1_eta", "parton_lepV_l1_phi", "parton_lepV_l1_mass", "parton_lepV_l1_pdgId", 
+                    "parton_lepV_l2_pt", "parton_lepV_l2_eta", "parton_lepV_l2_phi", "parton_lepV_l2_mass", "parton_lepV_l2_pdgId", 
+                    "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
+
+                    "delphesJet_pt", "delphesJet_eta", "delphesJet_phi", "delphesJet_mass", "delphesJet_nConstituents",
+
+                    "delphesJet_SDmass", "delphesJet_SDsubjet0_eta", "delphesJet_SDsubjet0_deltaEta", "delphesJet_SDsubjet0_phi", "delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
+                    "delphesJet_SDsubjet0_mass", "delphesJet_SDsubjet1_eta", "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_phi", "delphesJet_SDsubjet1_deltaPhi", 
+                    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
+                    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
+                    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
+
+                    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
+
+                    "p_C"]
     )
 
-reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto1L1NuNoRef_HT300_reweight_card.pkl'
+reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WlepZhadJJNoRef_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
 default_eft_parameters = {p:0 for p in weightInfo.variables}
@@ -69,7 +70,29 @@ wilson_coefficients = weightInfo.variables
 
 vector_branches = [] #"gen_pt", "gen_etarel", "gen_phirel"]
 
-feature_names = list(plot_options.keys())
+feature_names = [   
+    "parton_hadV_pt",     "parton_hadV_eta",     "parton_hadV_mass", 
+    "parton_hadV_angle_theta",     "parton_hadV_angle_Theta",     "parton_hadV_angle_phi", 
+    "parton_hadV_q1_pt",     "parton_hadV_q1_eta",     "parton_hadV_q1_mass",     "parton_hadV_q1_pdgId", 
+    "parton_hadV_q2_pt",     "parton_hadV_q2_eta",     "parton_hadV_q2_mass",     "parton_hadV_q2_pdgId", 
+    "parton_lepV_pt",     "parton_lepV_eta",     "parton_lepV_mass", 
+    "parton_lepV_l1_pt",     "parton_lepV_l1_eta",     "parton_lepV_l1_phi",     "parton_lepV_l1_pdgId", 
+    "parton_lepV_l2_pt",     "parton_lepV_l2_eta",     "parton_lepV_l2_phi",     "parton_lepV_l2_pdgId", 
+
+    "delphesJet_pt", "delphesJet_eta", "delphesJet_mass", "delphesJet_nConstituents",
+
+    "delphesJet_SDmass", "delphesJet_SDsubjet0_deltaEta","delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
+    "delphesJet_SDsubjet0_mass",  "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_deltaPhi", 
+    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
+    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
+    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", 
+    "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", 
+    "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", 
+    "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
+
+    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
+
+                    ]
 
 def getEvents( nTraining ):
     data_generator.load(-1, small=nTraining )
@@ -93,7 +116,9 @@ def getWeights( eft, coeffs, lin=False):
     #print (fac)
     return np.matmul(coeffs[:,:len(combs)], fac)
 
-tex = { 'cHj1':'C_{Hj}^{(1)}','cHj3':'C_{Hj}^{(3)}', 'cHu':'C_{Hu}','cHd':'C_{Hd}', 'cHQ3':'C_{HQ}^{(3)}', 'cHb':'C_{Hb}','cHudRe':'C_{Hud}^{Re}','cuWRe':'C_{uW}^{Re}', 'cuBRe':'C_{uB}^{Re}', 'cuHRe':'C_{uH}^{Re}', 'cHDD':'C_{HDD}', 'cHbox':'C_{H#box}', 'cH':'C_{H}', 'cW':'C_{W}', 'cWtil':'C_{Wtil}', 'cHW':'C_{HW}', 'cHWtil':'C_{HWtil}', 'cHWB':'C_{HWB}', 'cHB':'C_{HB}', 'cHWBtil':'C_{HWBtil}', 'cHBtil':'C_{HBtil}'}
+tex = { 'cHj1':'C_{Hj}^{(1)}','cHj3':'C_{Hj}^{(3)}', 'cHu':'C_{Hu}','cHd':'C_{Hd}', 'cHQ1':'C_{HQ}^{(1)}', 'cHQ3':'C_{HQ}^{(3)}', 'cHb':'C_{Hb}','cHudRe':'C_{Hud}^{Re}','cuWRe':'C_{uW}^{Re}', 'cuBRe':'C_{uB}^{Re}', 'cuHRe':'C_{uH}^{Re}', 'cHDD':'C_{HDD}', 'cHbox':'C_{H#box}', 'cH':'C_{H}', 'cW':'C_{W}', 'cWtil':'C_{Wtil}', 'cHW':'C_{HW}', 'cHWtil':'C_{HWtil}', 'cHWB':'C_{HWB}', 'cHB':'C_{HB}', 'cHWBtil':'C_{HWBtil}', 'cHBtil':'C_{HBtil}'}
+
+#cHj1_0p_cHj3_0p_cHQ1_0p_cHQ3_0p_cW_0p_cWtil_0p_cHW_0p_cHWtil_0p
 
 eft_plot_points = [
     {'color':ROOT.kBlack,       'eft':sm, 'tex':"SM"},
@@ -101,7 +126,8 @@ eft_plot_points = [
     {'color':ROOT.kMagenta+2,   'eft':make_eft(cHj3=.1),  'tex':"C_{Hj}^{(3)}=.1" },
 #    {'color':ROOT.kGreen-4,     'eft':make_eft(cHu=1),     'tex':"C_{Hu}=1" },
 #    {'color':ROOT.kGreen+2,     'eft':make_eft(cHd=1),  'tex':"C_{Hd}=1" },
-#    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
+    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ1=1),    'tex':"C_{HQ}^{(1)}=1" },
+    {'color':ROOT.kBlue-4,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
 #    {'color':ROOT.kBlue-4,      'eft':make_eft(cHb=1),    'tex':"C_{Hb}=1" },
 #    {'color':ROOT.kCyan+2,      'eft':make_eft(cHudRe=1),    'tex':"C_{Hud}^{(Re)}=1" },
 #    {'color':ROOT.kCyan-4,      'eft':make_eft(cuWRe=1),    'tex':"C_{uW}^{(Re)}=1" },
@@ -111,43 +137,25 @@ eft_plot_points = [
 #    {'color':ROOT.kMagenta-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
     {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
     {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
-    {'color':ROOT.kBlue-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
+#    {'color':ROOT.kBlue-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
 #    {'color':ROOT.kBlue+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
-    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
+    {'color':ROOT.kBlue+2,   'eft':make_eft(cHW=1),  'tex':"C_{HW}=1" },
+    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
+#    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
 #    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
 #    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
 #    {'color':ROOT.kOrange-4,    'eft':make_eft(cHBtil=1),    'tex':"C_{HBtil}=1" },
     ]
-#('cHj1',) -0.19147025574594592
-#('cHj3',) 11.008226990736716
-#('cHu',) -3.047507555296214e-11
-#('cHd',) 4.925264735832264e-12
-#('cHQ1',) -2.955158841499359e-11
-#('cHQ3',) -4.063343407061618e-11
-#('cHb',) -4.063343407061618e-11
-#('cHudRe',) -3.90942888406686e-11
-#('cuWRe',) -3.047507555296214e-11
-#('cuBRe',) -3.693948551874198e-11
-#('cuHRe',) -3.324553696686778e-11
-#('cW',) 0.36759169575135575
-#('cWtil',) -19.85648104998451
-#('cH',) -3.5862083857778676e-11
-#('cHbox',) -4.3711724530511346e-11
-#('cHDD',) 0.09253571120487394
-#('cHW',) -1.662276848343389e-11
-#('cHB',) -1.5699281345465343e-11
-#('cHWB',) -0.5666321612548608
-#('cHWtil',) -3.663165647275247e-11
-#('cHBtil',) -3.632382742676295e-11
-#('cHWBtil',) -0.15464831714701896
 
+from plot_options import *
+
+#cHj1 1 cHj3 1 cHu 1 cHd 1 cHQ1 1 cHQ3 1 cHb 1 cHudRe 1 cuWRe 1 cuBRe 1 cuHRe 1 cW 1 cWtil 1 cH 1 cHbox 1 cHDD 1 cHW 1 cHB 1 cHWB 1 cHWtil 1 cHBtil 1 cHWBtil 1
+# Command line arguments: ../../../../make_reweight_card.py --couplings 2 cHj1 1 cHj3 1 cHu 1 cHd 1 cHQ1 1 cHQ3 1 cHb 1 cHudRe 1 cuWRe 1 cuBRe 1 cuHRe 1 cW 1 cWtil 1 cH 1 cHbox 1 cHDD 1 cHW 1 cHB 1 cHWB 1 cHWtil 1 cHBtil 1 cHWBtil 1 --referencepoint cHDD 1 cHbox 1 cW 1 cWtil 1 cHW 1 cHWtil 1 cHWB 1 cHB 1 cHWBtil 1 --filename WhadZlepJJ_EWK_LO_SM_mjj100_pTj10_reweight_card.dat --overwrite
 
 if __name__=="__main__":
    
     # load some events and their weights 
-    x, v, coeffs = getEvents(1000)
-
-    assert False, ""
+    x, w = getEvents(1000)
 
     # x are a list of feature-vectors such that x[0] are the features of the first event. Their branch-names are stored in feature_names.
     # w are a dictionary with the weight-coefficients. The key tuple(), i.e., the empty n-tuple, is the constant term. The key ('ctWRe', ), i.e., the coefficient 

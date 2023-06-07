@@ -24,27 +24,28 @@ data_generator =  DataGenerator(
         n_split = 1,
         splitting_strategy = "files",
         selection   = selection,
-        branches = [
-
-                    "parton_hadV_pt", "parton_hadV_eta", "parton_hadV_angle_phi", "parton_hadV_mass", "parton_hadV_pdgId", "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
-                    "parton_hadV_q1_pt", "parton_hadV_q1_eta", "parton_hadV_q1_phi", "parton_hadV_q1_mass", "parton_hadV_q1_pdgId", 
-                    "parton_hadV_q2_pt", "parton_hadV_q2_eta", "parton_hadV_q2_phi", "parton_hadV_q2_mass", "parton_hadV_q2_pdgId", 
-                    "parton_lepV_pt", "parton_lepV_eta", "parton_lepV_phi", "parton_lepV_mass", "parton_lepV_pdgId", 
-                    "parton_lepV_l1_pt", "parton_lepV_l1_eta", "parton_lepV_l1_phi", "parton_lepV_l1_mass", "parton_lepV_l1_pdgId", 
-                    "parton_lepV_l2_pt", "parton_lepV_l2_eta", "parton_lepV_l2_phi", "parton_lepV_l2_mass", "parton_lepV_l2_pdgId", 
-                    "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
-
-                    "delphesJet_pt", "delphesJet_eta", "delphesJet_phi", "delphesJet_mass", "delphesJet_nConstituents",
-
-                    "delphesJet_SDmass", "delphesJet_SDsubjet0_eta", "delphesJet_SDsubjet0_deltaEta", "delphesJet_SDsubjet0_phi", "delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
-                    "delphesJet_SDsubjet0_mass", "delphesJet_SDsubjet1_eta", "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_phi", "delphesJet_SDsubjet1_deltaPhi", 
-                    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
-                    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
-                    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
-
-                    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
-
-                    "p_C"]
+        branches = list(plot_options.keys()) + ["p_C"]
+#        branches = [
+#
+#                    "parton_hadV_pt", "parton_hadV_eta", "parton_hadV_angle_phi", "parton_hadV_mass", "parton_hadV_pdgId", "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
+#                    "parton_hadV_q1_pt", "parton_hadV_q1_eta", "parton_hadV_q1_phi", "parton_hadV_q1_mass", "parton_hadV_q1_pdgId", 
+#                    "parton_hadV_q2_pt", "parton_hadV_q2_eta", "parton_hadV_q2_phi", "parton_hadV_q2_mass", "parton_hadV_q2_pdgId", 
+#                    "parton_lepV_pt", "parton_lepV_eta", "parton_lepV_phi", "parton_lepV_mass", "parton_lepV_pdgId", 
+#                    "parton_lepV_l1_pt", "parton_lepV_l1_eta", "parton_lepV_l1_phi", "parton_lepV_l1_mass", "parton_lepV_l1_pdgId", 
+#                    "parton_lepV_l2_pt", "parton_lepV_l2_eta", "parton_lepV_l2_phi", "parton_lepV_l2_mass", "parton_lepV_l2_pdgId", 
+#                    "parton_hadV_angle_theta", "parton_hadV_angle_Theta", "parton_hadV_angle_phi", 
+#
+#                    "delphesJet_pt", "delphesJet_eta", "delphesJet_phi", "delphesJet_mass", "delphesJet_nConstituents",
+#
+#                    "delphesJet_SDmass", "delphesJet_SDsubjet0_eta", "delphesJet_SDsubjet0_deltaEta", "delphesJet_SDsubjet0_phi", "delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
+#                    "delphesJet_SDsubjet0_mass", "delphesJet_SDsubjet1_eta", "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_phi", "delphesJet_SDsubjet1_deltaPhi", 
+#                    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
+#                    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
+#                    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
+#
+#                    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
+#
+#                    "p_C"]
     )
 
 reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WlepZhadJJNoRef_reweight_card.pkl'
@@ -70,29 +71,7 @@ wilson_coefficients = weightInfo.variables
 
 vector_branches = [] #"gen_pt", "gen_etarel", "gen_phirel"]
 
-feature_names = [   
-    "parton_hadV_pt",     "parton_hadV_eta",     "parton_hadV_mass", 
-    "parton_hadV_angle_theta",     "parton_hadV_angle_Theta",     "parton_hadV_angle_phi", 
-    "parton_hadV_q1_pt",     "parton_hadV_q1_eta",     "parton_hadV_q1_mass",     "parton_hadV_q1_pdgId", 
-    "parton_hadV_q2_pt",     "parton_hadV_q2_eta",     "parton_hadV_q2_mass",     "parton_hadV_q2_pdgId", 
-    "parton_lepV_pt",     "parton_lepV_eta",     "parton_lepV_mass", 
-    "parton_lepV_l1_pt",     "parton_lepV_l1_eta",     "parton_lepV_l1_phi",     "parton_lepV_l1_pdgId", 
-    "parton_lepV_l2_pt",     "parton_lepV_l2_eta",     "parton_lepV_l2_phi",     "parton_lepV_l2_pdgId", 
-
-    "delphesJet_pt", "delphesJet_eta", "delphesJet_mass", "delphesJet_nConstituents",
-
-    "delphesJet_SDmass", "delphesJet_SDsubjet0_deltaEta","delphesJet_SDsubjet0_deltaPhi", "delphesJet_SDsubjet0_deltaR", 
-    "delphesJet_SDsubjet0_mass",  "delphesJet_SDsubjet1_deltaEta", "delphesJet_SDsubjet1_deltaPhi", 
-    "delphesJet_SDsubjet1_deltaR", "delphesJet_SDsubjet1_mass", 
-    "delphesJet_tau1", "delphesJet_tau2", "delphesJet_tau3", "delphesJet_tau4", "delphesJet_tau21", "delphesJet_tau32", 
-    "delphesJet_ecf1", "delphesJet_ecf2", "delphesJet_ecf3", "delphesJet_ecfC1", "delphesJet_ecfC2", "delphesJet_ecfC3", "delphesJet_ecfD", "delphesJet_ecfDbeta2", 
-    "delphesJet_ecfM1", "delphesJet_ecfM2", "delphesJet_ecfM3", "delphesJet_ecfM1beta2", "delphesJet_ecfM2beta2", "delphesJet_ecfM3beta2", 
-    "delphesJet_ecfN1", "delphesJet_ecfN2", "delphesJet_ecfN3", "delphesJet_ecfN1beta2", "delphesJet_ecfN2beta2", "delphesJet_ecfN3beta2", 
-    "delphesJet_ecfU1", "delphesJet_ecfU2", "delphesJet_ecfU3", "delphesJet_ecfU1beta2", "delphesJet_ecfU2beta2", "delphesJet_ecfU3beta2", 
-
-    "delphesJet_dR_matched_hadV_parton", "delphesJet_dR_lepV_parton", "delphesJet_dR_hadV_q1", "delphesJet_dR_hadV_q2", "delphesJet_dR_hadV_maxq1q2",
-
-                    ]
+feature_names = list(plot_options.keys())
 
 def getEvents( nTraining ):
     data_generator.load(-1, small=nTraining )
@@ -126,8 +105,7 @@ eft_plot_points = [
     {'color':ROOT.kMagenta+2,   'eft':make_eft(cHj3=.1),  'tex':"C_{Hj}^{(3)}=.1" },
 #    {'color':ROOT.kGreen-4,     'eft':make_eft(cHu=1),     'tex':"C_{Hu}=1" },
 #    {'color':ROOT.kGreen+2,     'eft':make_eft(cHd=1),  'tex':"C_{Hd}=1" },
-    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ1=1),    'tex':"C_{HQ}^{(1)}=1" },
-    {'color':ROOT.kBlue-4,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
+#    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
 #    {'color':ROOT.kBlue-4,      'eft':make_eft(cHb=1),    'tex':"C_{Hb}=1" },
 #    {'color':ROOT.kCyan+2,      'eft':make_eft(cHudRe=1),    'tex':"C_{Hud}^{(Re)}=1" },
 #    {'color':ROOT.kCyan-4,      'eft':make_eft(cuWRe=1),    'tex':"C_{uW}^{(Re)}=1" },
@@ -137,10 +115,8 @@ eft_plot_points = [
 #    {'color':ROOT.kMagenta-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
     {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
     {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
-#    {'color':ROOT.kBlue-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
+    #{'color':ROOT.kBlue-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
 #    {'color':ROOT.kBlue+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
-    {'color':ROOT.kBlue+2,   'eft':make_eft(cHW=1),  'tex':"C_{HW}=1" },
-    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
 #    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
 #    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
 #    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
