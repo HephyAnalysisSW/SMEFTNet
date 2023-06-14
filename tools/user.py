@@ -25,3 +25,7 @@ elif os.environ['USER'] in ['suman.chatterjee']:
     plot_directory = './plots/'
     model_directory= "/groups/hephy/cms/suman.chatterjee/ML-pytorch/models/"
     data_directory = "groups/hephy/cms/suman.chatterjee/ML-pytorch/data/"
+elif os.environ['USER'] in ['sesanche']:
+    plot_directory = './plots/'
+    model_directory= "./models/"
+    data_directory = "./data/"

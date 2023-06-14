@@ -165,7 +165,7 @@ class SMEFTNet(torch.nn.Module):
     def forward(self, pt, angles, message_logging=False, return_EIRCGNN_output=False):
 
         # for IRC tests we actually low zero pt. Zero abs angles define the mask
-        mask = (angles.abs().sum(dim=-1) != 0)
+        mask = (pt != 0)
         batch= (torch.arange(len(mask)).to(device).view(-1,1)*mask.int())[mask]
 
         # we feed pt in col. 0, rho (as feature) in col. 1, and then the angles in col. 2,3

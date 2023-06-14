@@ -101,7 +101,9 @@ class DataGenerator(Sequence):
         else:
             filestart, filestop = 0, len(self.input_files)
 
+
         array = uproot.concatenate([f+':'+self.tree_name for f in self.input_files], self.branches)
+        print(array)
         # apply selection, if any
         len_before = len(array)
         if self.selection is not None: 
@@ -143,7 +145,7 @@ class DataGenerator(Sequence):
 
     def vector_branch( self, branches, padding_target=50, padding_value=0.):
         if type(branches)==str:
-            return np.array(self.data[branches].to_list())
+            return np.array(ak.fill_none(ak.pad_none( self.data[branches].to_list(), target=padding_target, clip=True), value=padding_value))
         else:
             return np.array([ np.array(ak.fill_none(ak.pad_none(self.data[b].to_list(), target=padding_target, clip=True), value=padding_value)).transpose() for b in branches ]).transpose()
 
