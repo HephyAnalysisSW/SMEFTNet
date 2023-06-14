@@ -204,9 +204,6 @@ class SMEFTNet(torch.nn.Module):
     def EIRCGNN_output( self, pt, angles, message_logging=False):
         return self.forward( pt=pt, angles=angles, message_logging=message_logging, return_EIRCGNN_output=True)
 
-    
-         
-
 if __name__=="__main__":
 
     import argparse
