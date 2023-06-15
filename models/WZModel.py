@@ -28,7 +28,7 @@ def angle( x, y):
 class WZModel:
     def __init__( self ):
 
-        self.dg =  DataGenerator(
+        self.data_generator =  DataGenerator(
             input_files = [os.path.join( user.data_directory, "v6/WZto1L1Nu_HT300/*.root" )],
             n_split = 10,
             splitting_strategy = "files",
@@ -44,7 +44,7 @@ class WZModel:
     @staticmethod
     def getEvents(data):
         #print("Getting events")
-        #self.dg._load(-1)
+        #self.data_generator._load(-1)
         #print("Loaded")
         q12_dphi = DataGenerator.scalar_branches(data, ['parton_hadV_q2_phi'])-DataGenerator.scalar_branches(data, ['parton_hadV_q1_phi'])
         #print("Gotten branch")
@@ -64,18 +64,15 @@ class WZModel:
 
 if __name__=="__main__":
 
-    # With the new DataGenerator, WZModel is only a container. You could just define data_generator = DataGenerator(...)  and getEvents() as a method in this module
-    # this is what I do for the other cases. Anyways, keeping your structure, this is how you would loop over the data:
-
     # reading file by file (because n_split is -1); choose n_split = 10 for 10 chunks, or 1 if you want to read the whole dataset
     model = WZModel()
     total = 0
-    for data in model.dg:
+    for data in model.data_generator:
         pts, gamma, _, truth   = model.getEvents(data)
         print ("len(pts)", len(pts))
         total += len(pts)
 
     print ("Read in total",total,"events")
-    print ("Reading all events at once: Got", len(model.getEvents(model.dg[-1])[0]) )
+    print ("Reading all events at once: Got", len(model.getEvents(model.data_generator[-1])[0]) )
      
 

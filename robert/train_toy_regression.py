@@ -15,13 +15,13 @@ parser.add_argument('--prefix',    action='store', default='v1', help="Prefix fo
 parser.add_argument('--config',    action='store', default='regressJet', help="Which config?")
 parser.add_argument('--learning_rate', '--lr',    action='store', default=0.001, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
-parser.add_argument('--nSplit', action='store', default=1000, type=int, help="Number of epochs.")
+parser.add_argument('--nTraining', action='store', default=1000, type=int, help="Number of epochs.")
 
 args = parser.parse_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-exec("import configs.%s as config"%args.config)
+exec("import toy_configs.%s as config"%args.config)
 
 import sys
 sys.path.insert(0, '..')
@@ -46,7 +46,7 @@ scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_f
 
 #################### Loading previous state #####################
 config.model.cfg_dict = {'best_loss_test':float('inf')}
-config.model.cfg_dict.update( {key:getattr(args, key) for key in ['prefix', 'learning_rate', 'epochs', 'nSplit' ]} )
+config.model.cfg_dict.update( {key:getattr(args, key) for key in ['prefix', 'learning_rate', 'epochs', 'nTraining' ]} )
 
 epoch_min = 0
 if not args.overwrite:
@@ -72,13 +72,13 @@ if not args.overwrite:
 
 ########################  Training loop ##########################
 
-# read all data
-pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[-1])
 for epoch in range(epoch_min, args.epochs):
 
-    #if epoch%10==0 or epoch==epoch_min:
-    #    train_mask = torch.FloatTensor(args.nTraining).uniform_() < 0.8
-    #    print ("New training and test dataset.")
+    # new data every 10 epochs
+    if epoch%10==0 or epoch==epoch_min:
+        pt, angles, weights, truth = config.data_model.getEvents(args.nTraining)
+        train_mask = torch.FloatTensor(args.nTraining).uniform_() < 0.8
+        print ("New training and test dataset.")
     optimizer.zero_grad()
 
     out  = config.model(pt=pt[train_mask], angles=angles[train_mask])
