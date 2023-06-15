@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import glob
 
 # Logging
 import logging
@@ -50,7 +51,7 @@ class DataGenerator(Sequence):
         self.input_files = []
         for filename in input_files:
             if filename.endswith('.root'):
-                self.input_files.append(filename)
+                self.input_files.extend(glob.glob(filename))
             # step into directory
             elif os.path.isdir( filename ):
                 for filename_ in os.listdir( filename ):
@@ -106,7 +107,7 @@ class DataGenerator(Sequence):
             if self.selection is not None:
                 len_before = len(self.array)
                 self.array = self.array[self.selection(self.array)]
-                print ("Applying selection with efficiency %4.3f" % (len(array)/len_before) )
+                print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
             entry_start, entry_stop = 0, len(self.array)
         elif self.splitting_strategy.lower() == 'events':
             if not hasattr( self, "array" ):
@@ -114,7 +115,7 @@ class DataGenerator(Sequence):
                 if self.selection is not None:
                     len_before = len(self.array)
                     self.array = self.array[self.selection(self.array)]
-                    print ("Applying selection with efficiency %4.3f" % (len(array)/len_before) )
+                    print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
             entry_start, entry_stop = get_chunk( len(self.array), n_split, index )
 
         if small is not None and small>0:
@@ -131,21 +132,16 @@ class DataGenerator(Sequence):
         else:
             return self._load( index )
 
-    def scalar_branches( self, branches ):
-    
-        #d=[]
-        #for b in branches: 
-        #    print (b)
-        #    d.append( self.data[b].to_list() )       
+    @staticmethod
+    def scalar_branches( data, branches ):
+        return np.array( [ data[b].to_list() for b in branches ] ).transpose()
 
-        #return np.array( d ).transpose()
-        return np.array( [ self.data[b].to_list() for b in branches ] ).transpose()
-
-    def vector_branch( self, branches, padding_target=50, padding_value=0.):
+    @staticmethod
+    def vector_branch( data, branches, padding_target=50, padding_value=0.):
         if type(branches)==str:
-            return np.array(ak.fill_none(ak.pad_none( self.data[branches].to_list(), target=padding_target, clip=True), value=padding_value))
+            return np.array(ak.fill_none(ak.pad_none( data[branches].to_list(), target=padding_target, clip=True), value=padding_value))
         else:
-            return np.array([ np.array(ak.fill_none(ak.pad_none(self.data[b].to_list(), target=padding_target, clip=True), value=padding_value)).transpose() for b in branches ]).transpose()
+            return np.array([ np.array(ak.fill_none(ak.pad_none(data[b].to_list(), target=padding_target, clip=True), value=padding_value)).transpose() for b in branches ]).transpose()
 
 if __name__=='__main__':
     import user

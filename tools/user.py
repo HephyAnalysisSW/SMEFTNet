@@ -12,4 +12,4 @@ elif os.environ['USER'] in ['suman.chatterjee']:
 elif os.environ['USER'] in ['sesanche']:
     plot_directory = './plots/'
     model_directory= "./models/"
-    data_directory = "./data/"
+    data_directory = "/pnfs/psi.ch/cms/trivcat/store/user/sesanche/SMEFTNet/"

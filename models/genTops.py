@@ -1,6 +1,7 @@
 import pickle
 import random
 import ROOT
+import os
 
 if __name__=="__main__":
     import sys
@@ -12,10 +13,11 @@ from tools.WeightInfo    import WeightInfo
 
 selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_genJet_maxq1q2b)<0.6) & (ar.genJet_SDsubjet1_mass>=0)
 # -> https://schoef.web.cern.ch/schoef/pytorch/choleskyNN/genTops/training_plots/choleskyNN_genTops_ctWRe_nTraining_519075/lin/epoch.gif
+import tools.user as user
 
 data_generator =  DataGenerator(
-    input_files = ["/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v6_tsch/tschRefPointNoWidthRW/*.root"],
-        n_split = 1,
+    input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*.root")],
+        n_split = -1,
         splitting_strategy = "files",
         selection   = selection,
         branches = [
@@ -79,11 +81,10 @@ def make_combinations( coefficients ):
             combinations.append(comb)
     return combinations
 
-def getEvents( nTraining ):
-    data_generator.load(-1, small=nTraining )
+def getEvents( data ):
     combinations = make_combinations( wilson_coefficients )
-    coeffs = data_generator.vector_branch('p_C')
-    return {key:data_generator.vector_branch( key ) for key in vector_branches}, {comb:coeffs[:,weightInfo.combinations.index(comb)] for comb in combinations}
+    coeffs = data_generator.vector_branch(data, 'p_C')
+    return {key:data_generator.vector_branch( data, key ) for key in vector_branches}, {comb:coeffs[:,weightInfo.combinations.index(comb)] for comb in combinations}
 
 tex = {"ctWRe":"C_{tW}^{Re}", "ctWIm":"C_{tW}^{Im}", "ctBIm":"C_{tB}^{Im}", "ctBRe":"C_{tB}^{Re}", "cHt":"C_{Ht}", 'cHtbRe':'C_{Htb}^{Re}', 'cHtbIm':'C_{Htb}^{Im}', 'cHQ3':'C_{HQ}^{(3)}'}
 
@@ -153,7 +154,7 @@ multi_bit_cfg = {'n_trees': 100,
 if __name__=="__main__":
    
     # load some events and their weights 
-    x, w = getEvents(1000)
+    x, w = getEvents(data_generator[0])
 
     # x are a list of feature-vectors such that x[0] are the features of the first event. Their branch-names are stored in feature_names.
     # w are a dictionary with the weight-coefficients. The key tuple(), i.e., the empty n-tuple, is the constant term. The key ('ctWRe', ), i.e., the coefficient 
