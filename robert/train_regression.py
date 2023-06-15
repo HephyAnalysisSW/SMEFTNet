@@ -74,6 +74,8 @@ if not args.overwrite:
 
 # read all data
 pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[-1])
+train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
+
 for epoch in range(epoch_min, args.epochs):
 
     #if epoch%10==0 or epoch==epoch_min:
