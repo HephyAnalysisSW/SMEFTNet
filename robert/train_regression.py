@@ -21,7 +21,7 @@ args = parser.parse_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-exec("import configs.%s as config"%args.config)
+exec("import toy_configs.%s as config"%args.config)
 
 import sys
 sys.path.insert(0, '..')

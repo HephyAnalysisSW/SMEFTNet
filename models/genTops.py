@@ -14,7 +14,7 @@ selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_ge
 # -> https://schoef.web.cern.ch/schoef/pytorch/choleskyNN/genTops/training_plots/choleskyNN_genTops_ctWRe_nTraining_519075/lin/epoch.gif
 
 data_generator =  DataGenerator(
-    input_files = ["/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v6/tschRefPointNoWidthRW/tschRefPointNoWidthRW_*.root"],
+    input_files = ["/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v6_tsch/tschRefPointNoWidthRW/*.root"],
         n_split = 1,
         splitting_strategy = "files",
         selection   = selection,
@@ -30,8 +30,8 @@ data_generator =  DataGenerator(
                     #"dR_genJet_Q1", "dR_genJet_Q2", "dR_genJet_W", "dR_genJet_b", "dR_genJet_top", "dR_genJet_maxQ1Q2b",
                     "genJet_pt", "genJet_SDmass", "dR_genJet_maxq1q2b", "genJet_SDsubjet1_mass", 
 
-                    "ngen", "gen_pt", "gen_etarel", "gen_phirel", "gen_eta", "gen_phi", "gen_pdgId", "gen_charge", "gen_type", 
-                    "p_C"]
+                    "ngen", "gen_pt", "gen_etarel", "gen_phirel", "gen_eta", "gen_phi", "gen_pdgId", "gen_charge", "gen_type",
+                    "ctWRe_coeff", "p_C"]
     )
 
 reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/t-sch-RefPoint-noWidthRW_reweight_card.pkl'

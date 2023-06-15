@@ -11,7 +11,7 @@ import itertools
 import operator
 import functools
 
-from models.JetModel import JetModel
+from toy_models.JetModel import JetModel
 
 import SMEFTNet
 #import sys
@@ -26,7 +26,7 @@ dRN = 0.4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-data_model = JetModel(minR=1, maxR=1, minGamma=-math.pi, maxGamma=math.pi, events_per_parampoint=1, two_prong=True, prong_pts=(1.,1.))
+data_model = JetModel(minR=1, maxR=1, minGamma=-math.pi, maxGamma=math.pi, events_per_parampoint=1)
 
 from SMEFTNet import SMEFTNet
 model = SMEFTNet(
@@ -36,11 +36,7 @@ model = SMEFTNet(
     learn_from_gamma=True,
     num_classes = 1,
     regression=True,
-   ).to(device)
+    ).to(device)
 
 def loss( out, truth, weights=None):
-    #return torch.min( (out[:,0] - torch.sin(truth[:,1]))**2 + (out[:,1] - torch.cos(truth[:,1]))**2, (out[:,0] + torch.sin(truth[:,1]))**2 + (out[:,1] + torch.cos(truth[:,1]))**2 ).sum() 
-    #return ( (out[:,0] - torch.sin(truth[:,1]))**2 + (out[:,1] - torch.cos(truth[:,1]))**2).sum() 
-    dPhi = out[:,0] - truth[:,1]
-    #return torch.abs( dPhi/(math.pi) - torch.floor( dPhi/(math.pi) + 0.5 ) ).sum() 
-    return ( ( dPhi - math.pi * torch.floor( dPhi/math.pi + 0.5 ))**2).sum() 
+    return ( (out[:,0] - truth[:,1])**2 ).sum() 

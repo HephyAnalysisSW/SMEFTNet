@@ -66,7 +66,7 @@ def func( out ):
 #def func( out ):
 #    return out[:,0]
 
-exec("import configs.regressJet_%s as config"%config_name)
+exec("import toy_configs.regressJet_%s as config"%config_name)
 
 pts, angles, _, truth = config.data_model.getEvents(5000)
 

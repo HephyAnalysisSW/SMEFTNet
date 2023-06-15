@@ -11,7 +11,7 @@ import itertools
 import operator
 import functools
 
-from models.JetModel import JetModel
+from toy_models.JetModel import JetModel
 
 import SMEFTNet
 #import sys

@@ -13,7 +13,7 @@ import functools
 
 
 # Let us import toy generator 
-from models.JetModel import JetModel
+from toy_models.JetModel import JetModel
 
 # Main class
 import SMEFTNet

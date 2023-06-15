@@ -11,7 +11,7 @@ import itertools
 import operator
 import functools
 
-from models.EFTModel import EFTModel
+from toy_models.EFTModel import EFTModel
 
 import SMEFTNet
 import LikleihoodFreeInference
