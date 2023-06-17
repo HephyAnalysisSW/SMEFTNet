@@ -32,3 +32,4 @@ else
     # these packages are not available in conda-forge
     pip install -r requirements.txt
 fi
+conda install pytorch-cluster -c pyg
