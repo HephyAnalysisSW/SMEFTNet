@@ -15,7 +15,7 @@ parser.add_argument('--prefix',    action='store', default='v1', help="Prefix fo
 parser.add_argument('--config',    action='store', default='regressJet', help="Which config?")
 parser.add_argument('--learning_rate', '--lr',    action='store', default=0.001, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
-parser.add_argument('--nSplit', action='store', default=1000, type=int, help="Number of epochs.")
+parser.add_argument('--load_every', action='store', default=5, type=int, help="Load new chunk of data every this number of epochs.")
 
 args = parser.parse_args()
 
@@ -46,7 +46,7 @@ scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_f
 
 #################### Loading previous state #####################
 config.model.cfg_dict = {'best_loss_test':float('inf')}
-config.model.cfg_dict.update( {key:getattr(args, key) for key in ['prefix', 'learning_rate', 'epochs', 'nSplit' ]} )
+config.model.cfg_dict.update( {key:getattr(args, key) for key in ['prefix', 'learning_rate', 'epochs' ]} )
 
 epoch_min = 0
 if not args.overwrite:
@@ -73,36 +73,59 @@ if not args.overwrite:
 ########################  Training loop ##########################
 
 # read all data
-pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[-1])
-train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
+#pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[0])
+#train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
 
+#data_counter=0
 for epoch in range(epoch_min, args.epochs):
 
-    #if epoch%10==0 or epoch==epoch_min:
-    #    train_mask = torch.FloatTensor(args.nTraining).uniform_() < 0.8
-    #    print ("New training and test dataset.")
-    optimizer.zero_grad()
-
-    out  = config.model(pt=pt[train_mask], angles=angles[train_mask])
-    loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
-
-    n_samples = len(out)
-    loss.backward()
-    optimizer.step()
-
-    with torch.no_grad():
-
-        out_test  =  config.model(pt=pt[~train_mask], angles=angles[~train_mask])
-        scale_test_train = n_samples/(len(out_test))
-        loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
-        loss_test*=scale_test_train
+    #if epoch%args.load_every==0 or epoch==epoch_min:
+    #    pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[data_counter])
+    #    data_counter+=1
+    #    if data_counter == len(config.data_model.data_generator): data_counter=0
  
-        if not "test_losses" in config.model.cfg_dict:
-            config.model.cfg_dict["train_losses"] = []
-            config.model.cfg_dict["test_losses"] = []
-        config.model.cfg_dict["train_losses"].append( loss.item() )
-        config.model.cfg_dict["test_losses"].append(  loss_test.item() )
+    #    train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
+    #    print ("New training and test dataset.")
+    n_samples = 0
+    optimizer.zero_grad()
+    for i_data, data in enumerate(config.data_model.data_generator):
+        pt, angles, weights, truth = config.data_model.getEvents(data)
+ 
+        train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
+        #print ("Training data set %i/%i" % (i_data, len(config.data_model.data_generator)))
 
+        out  = config.model(pt=pt[train_mask], angles=angles[train_mask])
+        loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
+
+        n_samples += len(out)
+        loss.backward()
+
+        with torch.no_grad():
+
+            out_test  =  config.model(pt=pt[~train_mask], angles=angles[~train_mask])
+            scale_test_train = len(out)/(len(out_test))
+            loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
+            loss_test*=scale_test_train
+     
+            if not "test_losses" in config.model.cfg_dict:
+                config.model.cfg_dict["train_losses"] = []
+                config.model.cfg_dict["test_losses"] = []
+
+            if i_data == 0:
+                config.model.cfg_dict["train_losses"].append( loss.item() )
+                config.model.cfg_dict["test_losses" ].append( loss_test.item() )
+            else:
+                config.model.cfg_dict["train_losses"] [-1] += loss.item()
+                config.model.cfg_dict["test_losses" ] [-1] += loss_test.item()
+            print ("Data %i/%i Loss train/test = %4.3f/%4.3f (Total: %4.3f/%4.3f)" % (
+                    i_data, len(config.data_model.data_generator),
+                    loss.item(), loss_test.item(), 
+                    config.model.cfg_dict["train_losses"] [-1], config.model.cfg_dict["test_losses" ][-1]), 
+                    end="\r")
+
+    print ("")
+
+    optimizer.step()
     print(f'Epoch {epoch:03d} with N={n_samples:03d}, Loss(train): {loss:.4f} Loss(test, scaled to nTrain): {loss_test:.4f}')
 
     config.model.cfg_dict['epoch']       = epoch

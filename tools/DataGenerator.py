@@ -39,6 +39,7 @@ class DataGenerator(Sequence):
             tree_name           = "Events",
             selection           = None,
             max_files           = None,
+            verbose             = False,
                 ):
         '''
         DataGenerator for the keras training framework.
@@ -65,6 +66,8 @@ class DataGenerator(Sequence):
         self.splitting_strategy = splitting_strategy
         if splitting_strategy.lower() not in ['files', 'events']:
             raise RuntimeError("'splitting_strategy' must be 'files' or 'events'")
+
+        self.verbose = verbose
 
         # split per file
         if splitting_strategy == "files" and n_split<0:
@@ -93,7 +96,7 @@ class DataGenerator(Sequence):
 
     def _load( self, index, small = None):
 
-        #print ("Loading index %i, strategy: %s"%(index, self.splitting_strategy.lower() ) )
+        if self.verbose: print ("Loading index %i, strategy: %s"%(index, self.splitting_strategy.lower() ) )
         if index>=0:
             n_split = self.n_split
         else:
@@ -107,7 +110,7 @@ class DataGenerator(Sequence):
             if self.selection is not None:
                 len_before = len(self.array)
                 self.array = self.array[self.selection(self.array)]
-                #print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
+                if self.verbose: print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
             entry_start, entry_stop = 0, len(self.array)
         elif self.splitting_strategy.lower() == 'events':
             if not hasattr( self, "array" ):
@@ -115,7 +118,7 @@ class DataGenerator(Sequence):
                 if self.selection is not None:
                     len_before = len(self.array)
                     self.array = self.array[self.selection(self.array)]
-                    print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
+                    if self.verbose: print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
             entry_start, entry_stop = get_chunk( len(self.array), n_split, index )
 
         if small is not None and small>0:
