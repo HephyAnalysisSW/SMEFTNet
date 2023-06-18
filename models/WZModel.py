@@ -2,6 +2,7 @@ import pickle
 import random
 import ROOT
 import os
+import numpy as np 
 
 if __name__=="__main__":
     import sys
@@ -22,15 +23,16 @@ targets = [
 ]
 
 def angle( x, y):
-    angle= torch.arctan2( torch.Tensor(y), torch.Tensor(x))
-    return torch.stack((torch.cos(angle), torch.sin(angle)),axis=2)
-
+    return torch.arctan2( torch.Tensor(y), torch.Tensor(x))
+def dphi(phi1,phi2):
+    dph=phi1-phi2
+    return dph + 2*np.pi*(dph < -np.pi) - 2*np.pi*(dph > np.pi)
 class WZModel:
     def __init__( self ):
 
         self.data_generator =  DataGenerator(
-            input_files = [os.path.join( user.data_directory, "v6/WZto1L1Nu_HT300/*.root" )],
-            n_split = 10,
+            input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300/*.root" )],
+            n_split = 200,
             splitting_strategy = "files",
             selection   = selection,
             branches = [
@@ -46,7 +48,7 @@ class WZModel:
         #print("Getting events")
         #self.data_generator._load(-1)
         #print("Loaded")
-        q12_dphi = DataGenerator.scalar_branches(data, ['parton_hadV_q2_phi'])-DataGenerator.scalar_branches(data, ['parton_hadV_q1_phi'])
+        q12_dphi = dphi(DataGenerator.scalar_branches(data, ['parton_hadV_q2_phi']),DataGenerator.scalar_branches(data, ['parton_hadV_q1_phi']))
         #print("Gotten branch")
 
         q12_deta = DataGenerator.scalar_branches(data, ['parton_hadV_q2_eta'])-DataGenerator.scalar_branches(data, ['parton_hadV_q1_eta'])
@@ -59,7 +61,8 @@ class WZModel:
         detas = torch.Tensor(detas) * ptmask  # 0-pad the pt < 5
         pts   = torch.Tensor(pts)   * ptmask  # 0-pad the pt < 5
         dphis = torch.Tensor(dphis) * ptmask  # 0-pad the pt < 5
-        return (torch.Tensor(pts), angle( detas, dphis), None, angle(q12_dphi, q12_deta)[:,0,:])
+        print(torch.stack(( detas, dphis)).shape, torch.Tensor(pts).shape)
+        return (torch.Tensor(pts), torch.stack(( detas, dphis),axis=2), None, angle(q12_dphi, q12_deta)[:,0])
 
 
 if __name__=="__main__":
