@@ -41,7 +41,6 @@ model = SMEFTNet(
 def loss( out, truth, weights=None):
     #return torch.min( (out[:,0] - torch.sin(truth[:,1]))**2 + (out[:,1] - torch.cos(truth[:,1]))**2, (out[:,0] + torch.sin(truth[:,1]))**2 + (out[:,1] + torch.cos(truth[:,1]))**2 ).sum() 
     #return ( (out[:,0] - torch.sin(truth[:,1]))**2 + (out[:,1] - torch.cos(truth[:,1]))**2).sum() 
-    print(out.shape, truth.shape)
-    dPhi = out[:,0] - truth[:,1]
+    dPhi = out[:,0] - truth
     #return torch.abs( dPhi/(math.pi) - torch.floor( dPhi/(math.pi) + 0.5 ) ).sum() 
-    return (torch.sin(dPhi)**2).sum() 
+    return (torch.sin(dPhi)**2).mean() 
