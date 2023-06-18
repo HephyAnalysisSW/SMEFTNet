@@ -93,7 +93,7 @@ class DataGenerator(Sequence):
 
     def _load( self, index, small = None):
 
-        print ("Loading index %i, strategy: %s"%(index, self.splitting_strategy.lower() ) )
+        #print ("Loading index %i, strategy: %s"%(index, self.splitting_strategy.lower() ) )
         if index>=0:
             n_split = self.n_split
         else:
@@ -107,7 +107,7 @@ class DataGenerator(Sequence):
             if self.selection is not None:
                 len_before = len(self.array)
                 self.array = self.array[self.selection(self.array)]
-                print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
+                #print ("Applying selection with efficiency %4.3f" % (len(self.array)/len_before) )
             entry_start, entry_stop = 0, len(self.array)
         elif self.splitting_strategy.lower() == 'events':
             if not hasattr( self, "array" ):
