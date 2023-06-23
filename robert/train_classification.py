@@ -21,9 +21,9 @@ parser.add_argument('--learning_rate', '--lr',    action='store', default=0.001,
 parser.add_argument('--learn_from_gamma', action='store_true',  help="SMEFTNet parameter")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
 parser.add_argument('--nTraining', action='store', default=1000, type=int, help="Number of epochs.")
+parser.add_argument('--dRN',  action='store', type=float, default=0.4)
 parser.add_argument('--conv_params',  action='store', default="( (0.0, [20, 20]), )", help="Conv params")
 parser.add_argument('--readout_params',  action='store', default="(0.0, [32, 32])", help="Conv params")
-parser.add_argument('--dRN',  action='store', type=float, default=0.4)
 
 args = parser.parse_args()
 

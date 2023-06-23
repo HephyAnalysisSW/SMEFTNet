@@ -21,11 +21,11 @@ args = parser.parse_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-exec("import toy_configs.%s as config"%args.config)
-
 import sys
 sys.path.insert(0, '..')
 import tools.user as user
+
+exec("import toy_configs.%s as config"%args.config)
 
 # reproducibility
 torch.manual_seed(0)

@@ -20,19 +20,20 @@ np.random.seed(0)
 
 delay  = 50/5
 
-logZ = True
-training_name  = "onlyR_try2"
-config_name    = "onlyR"
-xmin, xmax = 0, 1.5
-varName = "R"
-index_truth = 0
-index_out   = 0
-every = 2
-def func( out ):
-    return out[:, 0] 
+#logZ = True
+#training_name  = "onlyR_try2"
+#config_name    = "onlyR"
+#xmin, xmax = 0, 1.5
+#varName = "R"
+#index_truth = 0
+#index_out   = 0
+#every = 2
+#def func( out ):
+#    return out[:, 0] 
 
 #def func( out ):
 #    return out[:, 0] 
+
 #training_name  = "onlyGamma_try2"
 #config_name    = "onlyGamma"
 #xmin, xmax = -math.pi, math.pi
@@ -42,6 +43,17 @@ def func( out ):
 #every = 2
 #def func( out ):
 #    return out[:, 0] 
+
+training_name  = "onlyGamma"
+config_name    = "onlyGamma"
+xmin, xmax = -math.pi, math.pi
+varName = "#gamma"
+index_truth = 1
+index_out   = 0
+every = 10
+logZ=False
+def func( out ):
+    return out[:, 0] 
 
 #training_name  = "onlyGamma_oneProng_sinCosSep"
 #config_name    = "onlyGamma_oneProng"

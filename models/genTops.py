@@ -19,15 +19,17 @@ selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_ge
 import tools.user as user
 
 data_generator =  DataGenerator(
+    #input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*_1.root")],
     input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*.root")],
         n_split = -1,
         splitting_strategy = "files",
         selection   = selection,
         branches = [
-            "genJet_pt", "dR_genJet_maxq1q2b", "genJet_mass", "genJet_nConstituents", "genJet_SDmass", "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_SDsubjet1_mass", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
+            "genJet_pt", "dR_genJet_maxq1q2b", "genJet_SDmass", "genJet_mass", "genJet_nConstituents", "genJet_SDsubjet1_mass", # "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
 
-        "ngen", "gen_pt", "gen_etarel", "gen_phirel", "gen_eta", "gen_phi", "gen_pdgId", "gen_charge", "gen_type",
-        "ctWRe_coeff", "p_C", "ctWRe_coeff"]
+        "ngen", "gen_pt", "gen_etarel", "gen_phirel", #"gen_eta", "gen_phi", "gen_pdgId", "gen_charge", "gen_type",
+        "ctWRe_coeff"
+         ]
     )
 
 class genTopsModel:
@@ -36,7 +38,7 @@ class genTopsModel:
  
     @staticmethod
     def getEvents(data):
-        padding = 200 
+        padding = 100 
         ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
         weights = ctwRe_coeff[:, 0]
         truth = ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]

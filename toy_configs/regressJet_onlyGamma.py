@@ -39,4 +39,4 @@ model = SMEFTNet(
     ).to(device)
 
 def loss( out, truth, weights=None):
-    return ( (out[:,0] - truth[:,1])**2 ).sum() 
+    return ( (torch.sin(out[:,0] - truth[:,1]))**2 ).sum() 

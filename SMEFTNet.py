@@ -24,11 +24,11 @@ class EdgeConv(MessagePassing):
         self.message_logging = False
         self.message_dict    = {}
  
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, wj):
         with torch.no_grad():
             if self.message_logging:
                 self.message_dict["edge_index"] = edge_index 
-        return self.propagate(edge_index, x=x)
+        return self.propagate(edge_index, x=x, wj=wj)
 
     def message(self, x_i, x_j):
 
@@ -60,7 +60,7 @@ class EdgeConv(MessagePassing):
               x_i[:,-2:], # ... and finally the angles of xi  (2 columns)
              ), dim=1 ) 
 
-    def aggregate( self, inputs, index):#,  **kwargs):
+    def aggregate( self, inputs, index, wj):#,  **kwargs):
         ##remember: propagate calls message, aggregate, and update
         # inputs : ( pt, MLP[nf], angles[2]) 
         # where MLP[-1] is the gamma
@@ -68,16 +68,15 @@ class EdgeConv(MessagePassing):
         # -> 1 + nf(l+1) + 1 + 2 = nf(l+1) + 4
         
         # we accumulate the pt according to the index and normalize (IRC safe pooling of messages)
+        #print ("inputs", inputs.shape, inputs)
 
         pt = inputs[:,0]
-        #print ("inputs", inputs.shape)
         #print ("index", index.shape)
-        #print ("pt", pt.shape)
-        wj = pt/( torch.zeros_like(index.unique(),dtype=torch.float).index_add_(0, index, pt)[index])
-        if torch.any( torch.isnan(wj)):
-            print ("Warning! Found nan in pt weighted message passing (aggregation). There is a particle with only pt=0 particles in its neighbourhood. Replace with zero.")
-            wj = torch.nan_to_num(wj)
+        #print ("pt", pt.shape, pt[:200])
 
+        #print ("index",index.shape, index[:200])
+        #print ("index.unique",index.unique().shape, index.unique()[:200])
+        
         # first, weight ALL inputs
         result = torch.zeros((len(index.unique()),inputs.shape[1]),dtype=torch.float).to(device).index_add_(0, index, wj.view(-1,1)*inputs)
         # second, we take gamma=MLP[-1]=inputs[-3] and equivariantly rotate the angles in what is now results[-2]. 
@@ -105,15 +104,27 @@ class EIRCGNN(EdgeConv):
         self.dRN = dRN
 
     def forward(self, x, batch):
-
         # ( pt[1], features, angles[2] )
-        #print ("pt",pt.shape, pt)
+        #print ("x",x.shape, x[:200])
+        #print ("pt",pt.shape, pt[:200])
         #print ("features", features.shape, features)
         #print ("angles", angles.shape, angles)
-
         max_num_neighbors = max(batch.unique(return_counts=True)[1]).item()
+        #max_num_neighbors = 3
+        #print( "max_num_neighbors", max_num_neighbors )
         edge_index = radius(x[:,-2:], x[:,-2:], r=self.dRN, batch_x=batch, batch_y=batch, max_num_neighbors=max_num_neighbors)
-        return super().forward(x, edge_index=edge_index)
+        #print ("edge_index", edge_index.shape, edge_index[:,:200], edge_index)
+        #print ("batch",batch.shape,batch)
+        #print ("Compute wj")
+        #print( torch.sparse_coo_tensor(edge_index,values=pt[edge_index[1]]).sum(dim=1) )
+
+        pt = x[:,0]
+        sum_pt = torch.sparse_coo_tensor(edge_index,values=pt[edge_index[1]]).sum(dim=1).to_dense()
+        wj = pt[edge_index[1]]/sum_pt[edge_index[0]]
+
+        #print ( "wj", wj.shape, wj, wj[:200])
+        #sums = torch.zeros_like(index.unique(),dtype=torch.float).index_add_(0, index, pt)[index]
+        return super().forward(x, edge_index=edge_index, wj=wj)
 
 norm_kwargs={}#'track_running_stats':False}
 
@@ -175,11 +186,12 @@ class SMEFTNet(torch.nn.Module):
             x = EC(x, batch)
 
         # global IRC safe message pooling
-        pt = x[:,0] 
+        pt = x[:,0]
         wj = pt/( torch.zeros_like(batch.unique(),dtype=torch.float).index_add_(0, batch, pt))[batch]
         if torch.any( torch.isnan(wj)):
             print ("Warning! Found nan in pt weighted readout. Are there no particles with pt>0?. Replace with zero.")
             wj = torch.nan_to_num(wj)
+        
         # disregard first column (pt, keep the last two ones: cos/sin gamma)
         x = torch.zeros((len(batch.unique()),x[:,1:].shape[1]),dtype=torch.float).to(device).index_add_(0, batch, wj.view(-1,1)*x[:,1:])
 
