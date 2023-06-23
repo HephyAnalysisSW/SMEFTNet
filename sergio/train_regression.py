@@ -23,11 +23,12 @@ args = parser.parse_args()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if torch.cuda.is_available():
     torch.set_num_threads(8)
-exec("import configs.%s as config"%args.config)
 
 import sys
 sys.path.insert(0, '..')
 import tools.user as user
+
+exec("import configs.%s as config"%args.config)
 
 # reproducibility
 torch.manual_seed(0)
