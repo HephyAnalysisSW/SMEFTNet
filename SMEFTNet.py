@@ -125,19 +125,20 @@ class EIRCGNN(EdgeConv):
 norm_kwargs={}#'track_running_stats':False}
 
 class SMEFTNet(torch.nn.Module):
-    def __init__(self, num_classes=1, conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), dRN=0.4, readout_params=(0.0, [32, 32]), learn_from_gamma=False, regression=False):
+    def __init__(self, num_classes=1, num_features = 0, conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), dRN=0.4, readout_params=(0.0, [32, 32]), learn_from_gamma=False, regression=False):
         super().__init__()
 
         self.learn_from_gamma = learn_from_gamma
-        self.regression = regression
-        self.num_classes= num_classes
+        self.regression   = regression
+        self.num_classes  = num_classes
+        self.num_features = num_features
         self.EC = torch.nn.ModuleList()
 
         for l, (dropout, hidden_layers) in enumerate(conv_params):
             hidden_layers_ = copy.deepcopy(hidden_layers)
             hidden_layers_[-1]+=1 # separate output for gamma-coordinate 
             if l==0:
-                self.EC.append( EIRCGNN(MLP([3 + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu"), dRN=dRN ) )
+                self.EC.append( EIRCGNN(MLP([3*(1+num_features) + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu"), dRN=dRN ) )
             else:
                 self.EC.append( EIRCGNN(MLP([3*conv_params[l-1][1][-1]+2]+hidden_layers_,dropout=dropout, act="LeakyRelu"), dRN=dRN ) ) 
 
@@ -169,14 +170,19 @@ class SMEFTNet(torch.nn.Module):
         model.eval()
         return model
 
-    def forward(self, pt, angles, message_logging=False, return_EIRCGNN_output=False):
+    def forward(self, pt, angles, features=None, message_logging=False, return_EIRCGNN_output=False):
 
         # for IRC tests we actually low zero pt. Zero abs angles define the mask
         mask = (pt != 0)
         batch= (torch.arange(len(mask)).to(device).view(-1,1)*mask.int())[mask]
 
-        # we feed pt in col. 0, rho (as feature) in col. 1, and then the angles in col. 2,3
-        x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), angles[mask]), dim=1) 
+        # we feed pt in col. 0, rho (as feature) in col. 1, then the features, and finally the angles in col. 2,3
+        if features is not None:
+            assert features.shape[2]==self.num_features, "Got %i features but was expecting %i."%( features.shape[1], self.num_features)
+            x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), features[mask], angles[mask]), dim=1)
+        else: 
+            x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), angles[mask]), dim=1)
+
         for l, EC in enumerate(self.EC):
             EC.message_logging = message_logging
             x = EC(x, batch)

@@ -1,15 +1,17 @@
 import   numpy as np
 import   ROOT
 import   array
+import torch
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def clip_quantile( features, quantile, weights = None, return_selection=False):
 
-    selected  = np.array(list(range(len(features)))).reshape(-1)
-    selection = np.ones_like( selected ).astype('bool')
+    selected  = torch.arange(len(features)).to(device)
+    selection = (torch.ones_like( selected ) > 0).to(device)
 
     for i_feature in range(len(features[0])):
-        selection&= 1==np.digitize( features[:, i_feature], np.quantile( features[:, i_feature], ( quantile, 1.-quantile )) )
+        selection&= 1==torch.bucketize( features[:, i_feature], torch.quantile( features[:, i_feature], torch.tensor( (quantile, 1.-quantile) ).to(device) ) )
 
     if return_selection:
         return selection
@@ -19,7 +21,10 @@ def clip_quantile( features, quantile, weights = None, return_selection=False):
     #print( "Autoclean efficiency of %3.2f: %3.2f"%(args.auto_clean, np.count_nonzero( selection )/len_before) )
     return_features = features[selected]
     if weights is not None:
-        return_weights = {k:weights[k][selected] for k in weights.keys()}
+        if type(weights)==type({}):
+            return_weights = {k:weights[k][selected] for k in weights.keys()}
+        else:
+            return_weights = weights[selected] 
         return return_features, return_weights
     else:
         return return_features

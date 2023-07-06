@@ -14,44 +14,6 @@ import torch
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_genJet_maxq1q2b)<0.6) & (ar.genJet_SDsubjet1_mass>=0)
-# -> https://schoef.web.cern.ch/schoef/pytorch/choleskyNN/genTops/training_plots/choleskyNN_genTops_ctWRe_nTraining_519075/lin/epoch.gif
-import tools.user as user
-
-data_generator =  DataGenerator(
-    #input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*_1.root")],
-    input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*.root")],
-        n_split = -1,
-        splitting_strategy = "files",
-        selection   = selection,
-        branches = [
-            "genJet_pt", "dR_genJet_maxq1q2b", "genJet_SDmass", "genJet_mass", "genJet_nConstituents", "genJet_SDsubjet1_mass", # "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
-
-        "ngen", "gen_pt", "gen_etarel", "gen_phirel", #"gen_eta", "gen_phi", "gen_pdgId", "gen_charge", "gen_type",
-        "ctWRe_coeff"
-         ]
-    )
-
-class genTopsModel:
-    def __init__( self ):
-        self.data_generator = data_generator
- 
-    @staticmethod
-    def getEvents(data):
-        padding = 100 
-        ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
-        weights = ctwRe_coeff[:, 0]
-        truth = ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]
-
-        pts = DataGenerator.vector_branch( data, 'gen_pt',padding_target=padding )
-        ptmask = torch.ones_like( torch.Tensor(pts) ).to(device) #  (pts > 5)
-        detas = DataGenerator.vector_branch( data, 'gen_etarel',padding_target=padding ) # [ptmask]
-        dphis = DataGenerator.vector_branch( data, 'gen_phirel',padding_target=padding ) # [ptmask
-        detas = torch.Tensor(detas).to(device) * ptmask  # 0-pad the pt < 5
-        pts   = torch.Tensor(pts).to(device)   * ptmask  # 0-pad the pt < 5
-        dphis = torch.Tensor(dphis).to(device) * ptmask  # 0-pad the pt < 5
-        return pts, torch.stack( (dphis, detas), axis=-1), torch.tensor(weights).to(device), torch.tensor(truth).to(device)
-
 reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/t-sch-RefPoint-noWidthRW_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
@@ -65,36 +27,113 @@ def make_eft(**kwargs):
             result[key] = float(val)
     return result
 
+wilson_coefficients = ['ctWRe']
+
 random_eft = make_eft(**{v:random.random() for v in weightInfo.variables} )
 sm         = make_eft()
-
-if __name__=="__main__":
-    wilson_coefficients = weightInfo.variables 
-else:
-    wilson_coefficients = ['ctWRe']
-
-vector_branches = ["gen_pt", "gen_etarel", "gen_phirel"]
-
-feature_names = [   
-    "genJet_pt", "dR_genJet_maxq1q2b", "genJet_mass", "genJet_nConstituents", "genJet_SDmass", "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_SDsubjet1_mass", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
-                    ]
 
 def make_combinations( coefficients ):
     combinations = []
     for comb in weightInfo.combinations:
         good = True
         for k in comb:
-            if k not in coefficients:
+            if k not in wilson_coefficients:
                 good = False
                 break
         if good:
             combinations.append(comb)
     return combinations
 
-def getEvents( data ):
-    combinations = make_combinations( wilson_coefficients )
-    coeffs = data_generator.vector_branch(data, 'p_C')
-    return {key:data_generator.vector_branch( data, key ) for key in vector_branches}, {comb:coeffs[:,weightInfo.combinations.index(comb)] for comb in combinations}
+selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_genJet_maxq1q2b)<0.6) & (ar.genJet_SDsubjet1_mass>=0)
+# -> https://schoef.web.cern.ch/schoef/pytorch/choleskyNN/genTops/training_plots/choleskyNN_genTops_ctWRe_nTraining_519075/lin/epoch.gif
+import tools.user as user
+
+scalar_features = [   
+    "genJet_pt", "dR_genJet_maxq1q2b", "genJet_mass", "genJet_nConstituents", "genJet_SDmass", "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_SDsubjet1_mass", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
+                    ]
+
+data_generator = DataGenerator(
+            input_files = [os.path.join( user.data_directory, "v6_tsch/tschRefPointNoWidthRW/*.root")],
+                n_split = -1,
+                splitting_strategy = "files",
+                selection   = selection,
+                branches = [
+                    "genJet_pt", "dR_genJet_maxq1q2b", "genJet_SDmass", "genJet_mass", "genJet_nConstituents", "genJet_SDsubjet1_mass", 
+                    "ngen", "gen_pt", "gen_etarel", "gen_phirel", "gen_charge", "p_C",
+                    "ctWRe_coeff"
+                 ] + scalar_features
+            )
+
+def angle( x, y):
+    return torch.arctan2( torch.Tensor(y), torch.Tensor(x))
+
+#def dphi(phi1,phi2):
+#    dph=phi1-phi2
+#    return dph + 2*np.pi*(dph < -np.pi) - 2*np.pi*(dph > np.pi)
+
+class genTopsModel:
+    def __init__( self, min_pt = 0, padding=100, small=False, features = [], truth_interval = None):
+        self.scalar_features = scalar_features
+        self.features = features
+        self.padding  = padding
+        self.min_pt   = min_pt
+        self.truth_interval = truth_interval
+        self.data_generator = data_generator 
+        self.data_generator.branches += features 
+
+    def set_truth_mask( self, truth):
+        self.mask = torch.ones(len(truth),dtype=bool).to(device)
+        if self.truth_interval is not None:
+            if self.truth_interval[0] is not None:
+                self.mask*=(truth>self.truth_interval[0])
+            if self.truth_interval[1] is not None:
+                self.mask*=(truth<=self.truth_interval[1])
+
+    #@staticmethod
+    def getEvents(self, data):
+        ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
+        weights = ctwRe_coeff[:, 0]
+        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        self.set_truth_mask(truth)
+        #truth = -0.15*torch.ones_like(truth)
+
+        pts = DataGenerator.vector_branch( data, 'gen_pt',padding_target=self.padding )
+        ptmask =  torch.Tensor((pts >= self.min_pt)).to(device) #  (pts > 5)
+        detas = DataGenerator.vector_branch( data, 'gen_etarel',padding_target=self.padding ) # [ptmask]
+        dphis = DataGenerator.vector_branch( data, 'gen_phirel',padding_target=self.padding ) # [ptmask
+        pts   = torch.Tensor(pts).to(device)   * ptmask  
+        detas = torch.Tensor(detas).to(device) * ptmask  
+        dphis = torch.Tensor(dphis).to(device) * ptmask  
+        #return pts, torch.stack( (dphis, detas), axis=-1), torch.tensor(weights).to(device), torch.tensor(truth).to(device)
+
+        
+        features = None
+        for feature in self.features: 
+            branch_data = DataGenerator.vector_branch( data, feature, padding_target=self.padding ) 
+            if features is None:
+                features = (torch.Tensor(branch_data).to(device) * ptmask).view(-1,self.padding,1)
+            else:
+                features = torch.cat( (features, (torch.Tensor(branch_data).to(device)* ptmask).view(-1,self.padding,1)), dim=2)
+
+        return  pts[self.mask],\
+                torch.stack( (dphis, detas), axis=-1)[self.mask],\
+                features[self.mask] if features is not None else None,\
+                torch.Tensor( weights ).to(device)[self.mask],\
+                truth[self.mask]
+
+    def getWeightDict( self, data ):
+        ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
+        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        self.set_truth_mask(truth)
+        combinations = make_combinations( wilson_coefficients )
+        coeffs = data_generator.vector_branch(data, 'p_C')
+        return {comb:coeffs[:,weightInfo.combinations.index(comb)][self.mask] for comb in combinations}
+
+    def getScalarFeatures( self, data ):
+        ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
+        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        self.set_truth_mask(truth)
+        return DataGenerator.scalar_branches( data, self.scalar_features )[self.mask]
 
 tex = {"ctWRe":"C_{tW}^{Re}", "ctWIm":"C_{tW}^{Im}", "ctBIm":"C_{tB}^{Im}", "ctBRe":"C_{tB}^{Re}", "cHt":"C_{Ht}", 'cHtbRe':'C_{Htb}^{Re}', 'cHtbIm':'C_{Htb}^{Im}', 'cHQ3':'C_{HQ}^{(3)}'}
 
@@ -108,6 +147,7 @@ eft_plot_points = [
     {'color':ROOT.kBlue+2,      'eft':make_eft(ctWRe=5),   'tex':"c_{tW}^{Re}=5",},
     {'color':ROOT.kBlue-4,      'eft':make_eft(ctWRe=-5),   'tex':"c_{tW}^{Re}=-5",},
     ]
+
 plot_options =  {
     "genJet_pt"                 :{'binning':[50,500,2000], 'tex':'p_{T}(jet)'},
     "genJet_mass"               :{'binning':[50,150,200], 'tex':'M(jet) unpruned'},

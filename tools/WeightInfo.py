@@ -361,7 +361,7 @@ class WeightInfo:
             # store [ ncoeff, factor ]
             terms.append( [ i_comb, fac ] )
 
-        return lambda event, sample: sum( event.p_C[term[0]]*term[1] for term in terms )
+        return lambda event, sample, terms=terms: sum( event.p_C[term[0]]*term[1] for term in terms )
 
     def get_diff_weight_func(self, var, **kwargs):
         '''construct a lambda function that evaluates the diff weight in terms of the event.p_C coefficient vector using the kwargs as WC
@@ -388,7 +388,7 @@ class WeightInfo:
             if fac == 0.: continue 
             terms.append( [ i_comb, fac ] )
 
-        return lambda event, sample: sum( event.p_C[term[0]]*term[1] for term in terms )
+        return lambda event, sample, terms=terms: sum( event.p_C[term[0]]*term[1] for term in terms )
 
     def get_double_diff_weight_func(self, var, **kwargs):
         '''construct a lambda function that evaluates the diff weight in terms of the event.p_C coefficient vector using the kwargs as WC
@@ -410,7 +410,7 @@ class WeightInfo:
             if fac == 0.: continue
             terms.append( [ i_comb, fac ] )
 
-        return lambda event, sample: sum( event.p_C[term[0]]*term[1] for term in terms )
+        return lambda event, sample, terms=terms: sum( event.p_C[term[0]]*term[1] for term in terms )
 
     def get_total_weight_yield( self, coeffLists, **kwargs ):
         '''compute yield from a list of coefficients (in the usual order of p_C) using the kwargs as WC

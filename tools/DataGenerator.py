@@ -90,6 +90,13 @@ class DataGenerator(Sequence):
         # name of the tree to be read
         self.tree_name = tree_name
 
+    def reduceFiles( self, to ):
+        self.input_files = self.input_files[:to]
+        if self.splitting_strategy == 'files':
+            self.n_split = min( [to, self.n_split] )
+
+        print ("Reducing files to %i. n_split: %i" % (len(self.input_files), self.n_split ) ) 
+
     # interface to Keras
     def __len__( self ):
         return self.n_split
