@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 parser = argparse.ArgumentParser()
 parser.add_argument('--overwrite', action='store_true', default=False, help="restart training?")
 parser.add_argument('--prefix',    action='store', default='v1', help="Prefix for training?")
-parser.add_argument('--config',    action='store', default='regressJet', help="Which config?")
+parser.add_argument('--config',    action='store', default='regress_wz_v0', help="Which config?")
 parser.add_argument('--learning_rate', '--lr',    action='store', default=0.01, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
 parser.add_argument('--nSplit', action='store', default=1000, type=int, help="Number of epochs.")
@@ -90,7 +90,7 @@ for epoch in range(epoch_min, args.epochs):
 
         optimizer.zero_grad()
 
-        out  = config.model(pt=pt[train_mask], angles=angles[train_mask], features=features[train_mask])
+        out  = config.model(pt=pt[train_mask], angles=angles[train_mask], features=features[train_mask] if features is not None else None)
         loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
         pbar.set_description(f'Loss: {loss.item()}')
 
@@ -100,18 +100,18 @@ for epoch in range(epoch_min, args.epochs):
         if pt_test is None:
             pt_test=pt[~train_mask]
             angles_test=angles[~train_mask]
-            features_test=features[~train_mask]
+            features_test=features[~train_mask] if features is not None else None
             weights_test=None
             truth_test=truth[~train_mask]
         else:
             pt_test=torch.cat((pt_test,pt[~train_mask]),axis=0)
             angles_test=torch.cat((angles_test,angles[~train_mask]),axis=0)
-            features_test=torch.cat((features_test,features[~train_mask]),axis=0)
+            features_test=torch.cat((features_test,features[~train_mask]),axis=0) if features is not None else None
             weights_test=None
             truth_test=torch.cat((truth_test,truth[~train_mask]),axis=0)
             
     with torch.no_grad():
-        out_test  =  config.model(pt=pt_test, angles=angles_test, features=features_test)
+        out_test  =  config.model(pt=pt_test, angles=angles_test, features=features_test if features is not None else None)
         loss_test = config.loss( out_test, truth_test, weights_test)
         print(f"Test loss is {loss_test}")
         plt.hist2d(  out_test[:,0].numpy(),  truth_test.numpy() , bins=30)
