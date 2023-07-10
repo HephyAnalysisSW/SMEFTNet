@@ -95,11 +95,11 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
     weights     = model.getWeights( eft, coeffs)
     weights_lin = model.getWeights( eft, coeffs, lin=True)
 
-    # FIXME
-    if i_eft == 0:
-        weights_sm = weights
-    mask = (np.log(np.abs(weights_lin/weights_sm))<0) & (weights_lin/weights_sm>0)
-    weights_lin[~mask] = 0
+    ## FIXME
+    #if i_eft == 0:
+    #    weights_sm = weights
+    #mask = (np.log(np.abs(weights_lin/weights_sm))<0) & (weights_lin/weights_sm>0)
+    #weights_lin[~mask] = 0
 
     for i_feature, feature in enumerate(model.feature_names):
         binning = model.plot_options[feature]['binning']
