@@ -12,6 +12,7 @@ import operator
 import functools
 
 from models.WZModel import WZModel
+import matplotlib.pyplot as plt 
 
 import SMEFTNet
 #import sys
@@ -44,3 +45,9 @@ def loss( out, truth, weights=None):
     dPhi = out[:,0] - truth
     #return torch.abs( dPhi/(math.pi) - torch.floor( dPhi/(math.pi) + 0.5 ) ).sum() 
     return (torch.sin(dPhi)**2).mean() 
+
+def plot( out, truth, weights, model_directory, epoch):
+    
+    plt.hist2d( out[:,0].numpy(),  truth.numpy() , bins=30)
+    plt.savefig( os.path.join( model_directory, f'test_cov_{epoch}.png'))
+    plt.clf()
