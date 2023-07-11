@@ -28,6 +28,7 @@ dRN = 0.4
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 data_model = WZModel(what='VV')
+#data_model = WZModel(what='lab')
 
 from SMEFTNet import SMEFTNet
 model = SMEFTNet(

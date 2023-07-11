@@ -16,9 +16,11 @@ parser.add_argument('--config',    action='store', default='regressJet', help="W
 parser.add_argument('--learning_rate', '--lr',    action='store', default=0.001, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
 #parser.add_argument('--load_every', action='store', default=5, type=int, help="Load new chunk of data every this number of epochs.")
+parser.add_argument('--clip',  action='store', type=float,   default=None)
 parser.add_argument('--dRN',  action='store', type=float,   default=0.4)
 parser.add_argument('--conv_params',  action='store',       default="( (0.0, [20, 20]), )", help="Conv params")
 parser.add_argument('--readout_params',  action='store',    default="(  0.0, [32, 32])", help="Conv params")
+parser.add_argument('--small',       action='store_true',    help="Small?")
 
 args = parser.parse_args()
 
@@ -27,7 +29,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 import sys
 sys.path.insert(0, '..')
 import tools.user as user
-
+import tools.helpers as helpers
 exec("import configs.%s as config"%args.config)
 
 # reproducibility
@@ -57,6 +59,7 @@ scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_f
 #################### Loading previous state #####################
 model.cfg_dict = {'best_loss_test':float('inf')}
 model.cfg_dict.update( {key:getattr(args, key) for key in ['prefix', 'learning_rate', 'epochs' ]} )
+model.cfg_dict.update( {'dRN':args.dRN, 'conv_params':eval(args.conv_params), 'readout_params':eval(args.readout_params)} )
 
 epoch_min = 0
 if not args.overwrite:
@@ -88,6 +91,9 @@ if not args.overwrite:
 
 #assert False, ""
 
+if args.small:
+    config.data_model.data_generator.reduceFiles(to=1)
+
 #data_counter=0
 for epoch in range(epoch_min, args.epochs):
 
@@ -99,23 +105,31 @@ for epoch in range(epoch_min, args.epochs):
     #    train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
     #    print ("New training and test dataset.")
     n_samples = 0
+    optimizer.zero_grad()
     for i_data, data in enumerate(config.data_model.data_generator):
-        pt, angles, weights, truth = config.data_model.getEvents(data)
- 
+        pt, angles, features, weights, truth = config.data_model.getEvents(data)
+        if args.clip is not None:
+            len_before = len(pt)
+            #selection = helpers.clip_quantile( config.data_model.getScalarFeatures( data ), args.clip, return_selection = True )
+            selection = helpers.clip_quantile( truth.view(-1,1), args.clip, return_selection = True )
+            pt          = pt[selection]
+            angles      = angles[selection]
+            features    = features[selection] if features is not None else None
+            weights     = weights[selection]
+            truth       = truth[selection]
+            #print ("Weight clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
+
         train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
         #print ("Training data set %i/%i" % (i_data, len(config.data_model.data_generator)))
 
-        out  = model(pt=pt[train_mask], angles=angles[train_mask])
+        out  = model(pt=pt[train_mask], angles=angles[train_mask], features=features[train_mask] if features is not None else None)
         loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
         n_samples += len(out)
-
-        optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
 
         with torch.no_grad():
 
-            out_test  =  model(pt=pt[~train_mask], angles=angles[~train_mask])
+            out_test  =  model(pt=pt[~train_mask], angles=angles[~train_mask], features=features[~train_mask] if features is not None else None)
             scale_test_train = len(out)/(len(out_test))
             loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
             loss_test*=scale_test_train
@@ -135,6 +149,8 @@ for epoch in range(epoch_min, args.epochs):
                     loss.item(), loss_test.item(), 
                     model.cfg_dict["train_losses"] [-1], model.cfg_dict["test_losses" ][-1]), 
                     end="\r")
+    print ("mean(truth), mean(out)", truth.mean(), out[:,0].mean())
+    optimizer.step()
 
     print ("")
 
