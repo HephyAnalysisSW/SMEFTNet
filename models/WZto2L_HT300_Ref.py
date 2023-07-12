@@ -19,16 +19,16 @@ selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_m
 
 import tools.user as user
 from plot_options import *
-
+                
 data_generator = DataGenerator(
-        input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300/WZto2L_HT300*.root")],
+        input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300_Ref/WZto2L_HT300_Ref*.root")],
         n_split = -1,
         splitting_strategy = "files",
         selection   = selection,
         branches = list(plot_options.keys()) + ["p_C"]
     )
 
-reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2LNoRef_HT300_reweight_card.pkl'
+reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2L_HT300_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
 default_eft_parameters = {p:0 for p in weightInfo.variables}
@@ -86,8 +86,8 @@ tex = { 'cHj1':'C_{Hj}^{(1)}','cHj3':'C_{Hj}^{(3)}', 'cHu':'C_{Hu}','cHd':'C_{Hd
 
 eft_plot_points = [
     {'color':ROOT.kBlack,       'eft':sm, 'tex':"SM"},
-    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHj1=1),   'tex':"C_{Hj}^{(1)}=1" },
-    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHj3=.1),  'tex':"C_{Hj}^{(3)}=.1" },
+#    {'color':ROOT.kMagenta-4,   'eft':make_eft(cHj1=1),   'tex':"C_{Hj}^{(1)}=1" },
+#    {'color':ROOT.kMagenta+2,   'eft':make_eft(cHj3=.1),  'tex':"C_{Hj}^{(3)}=.1" },
 #    {'color':ROOT.kGreen-4,     'eft':make_eft(cHu=1),     'tex':"C_{Hu}=1" },
 #    {'color':ROOT.kGreen+2,     'eft':make_eft(cHd=1),  'tex':"C_{Hd}=1" },
 #    {'color':ROOT.kBlue+2,      'eft':make_eft(cHQ3=1),    'tex':"C_{HQ}^{(3)}=1" },
@@ -99,10 +99,10 @@ eft_plot_points = [
 #    {'color':ROOT.kMagenta+2,      'eft':make_eft(cHW=1),    'tex':"C_{HW}=1" },
 #    {'color':ROOT.kMagenta-4,      'eft':make_eft(cHWtil=1),    'tex':"C_{HWtil}=1" },
     {'color':ROOT.kGreen-4,     'eft':make_eft(cW=1),     'tex':"C_{W}=1" },
-    {'color':ROOT.kGreen+2,     'eft':make_eft(cWtil=1),  'tex':"C_{Wtil}=1" },
-    {'color':ROOT.kBlue-4,   'eft':make_eft(cHDD=1),   'tex':"C_{HDD}=1" },
-#    {'color':ROOT.kBlue+2,   'eft':make_eft(cHbox=1),  'tex':"C_{H#box}=1" },
-    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
+    {'color':ROOT.kGreen+2,     'eft':make_eft(cW=-1),  'tex':"C_{W}=-1" },
+    {'color':ROOT.kBlue-4,   'eft':make_eft(cWtil=1),   'tex':"C_{Wtil}=1" },
+    {'color':ROOT.kBlue+2,   'eft':make_eft(cWtil=-1),  'tex':"C_{Wtil}=-1" },
+#    {'color':ROOT.kCyan+2,      'eft':make_eft(cHWB=1),    'tex':"C_{HWB}=1" },
 #    {'color':ROOT.kCyan-4,      'eft':make_eft(cHB=1),    'tex':"C_{HB}=1" },
 #    {'color':ROOT.kOrange+2,    'eft':make_eft(cHWBtil=1),    'tex':"C_{HWBtil}=1" },
 #    {'color':ROOT.kOrange-4,    'eft':make_eft(cHBtil=1),    'tex':"C_{HBtil}=1" },

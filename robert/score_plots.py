@@ -22,9 +22,9 @@ ROOT.setTDRStyle()
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument("--plot_directory",     action="store",      default="SMEFTNet",     help="plot sub-directory")
-argParser.add_argument("--model",              action="store",      default="WlepZhadJJ",   help="Which model?")
-argParser.add_argument("--WC",                 action="store",      default="cW",   help="Which Wilson coefficient?")
-argParser.add_argument("--prefix",             action="store",      default="v5", type=str,  help="prefix")
+argParser.add_argument("--model",              action="store",      default="WZto2L_HT300",   help="Which model?")
+argParser.add_argument("--WCs",                action="store",      nargs="*", default="WZto2L_HT300",   help="Which wilson coefficients?")
+argParser.add_argument("--prefix",             action="store",      default="v6", type=str,  help="prefix")
 
 args = argParser.parse_args()
 
@@ -55,49 +55,40 @@ def drawObjects( offset=0 ):
 ## Plot Model #
 ###############
 
-#stuff = []
+stuff = []
 h    = {}
-#h_lin= {}
 
-sm = model.make_eft() 
+sm = model.make_eft()
+weights     = model.getWeights( sm, coeffs)
 
-h     = {}
-weights      = model.getWeights( sm, coeffs)
-scores       = (model.getWeights( model.make_eft(**{args.WC:1}), coeffs) - model.getWeights( model.make_eft(**{args.WC:-1}), coeffs))/(2*model.getWeights( sm, coeffs))
-score_bins   = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.]
-thresholds   = helpers.weighted_quantile( scores, score_bins, weights=weights)
-score_binned = np.digitize( scores, thresholds)
+for i_WC, WC in enumerate(args.WCs):
 
-color = ROOT.kAzure
+    h[WC]     = {}
 
-for i_quantile in range(len(score_bins)):
-    h[i_quantile] = {} 
-    mask = score_binned==i_quantile+1
+    for i_feature, feature in enumerate(model.feature_names):
+        h[WC][feature]      = ROOT.TH1F(WC+'_'+feature,WC+'_'+feature+'', *model.plot_options[feature]['binning'] )
+
+    scores = .5*(model.getWeights( model.make_eft(**{WC:1}), coeffs) - model.getWeights( model.make_eft(**{WC:-1}), coeffs))/weights
+
     for i_feature, feature in enumerate(model.feature_names):
         binning = model.plot_options[feature]['binning']
 
-        h[i_quantile][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature][mask], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights[mask]) )
-
-        h[i_quantile][feature].SetLineWidth(0)
-        h[i_quantile][feature].SetLineColor( color + i_quantile )
-        h[i_quantile][feature].SetFillColor( color + i_quantile )
-        h[i_quantile][feature].SetMarkerStyle(0)
-        h[i_quantile][feature].SetMarkerColor(color + i_quantile)
-        h[i_quantile][feature].legendText = "(%3.2f, %3.2f)"%(thresholds[i_quantile], thresholds[i_quantile+1])
+        h[WC][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights*scores) )
+        norm           = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights) )
+        h[WC][feature].Divide(norm)
+        h[WC][feature].SetLineWidth(2)
+        h[WC][feature].SetLineColor( ROOT.kBlack+i_WC )
+        h[WC][feature].SetMarkerStyle(0)
+        h[WC][feature].SetMarkerColor(ROOT.kBlack+i_WC)
+        h[WC][feature].legendText = "t(%s)"%WC 
 
 for i_feature, feature in enumerate(model.feature_names):
-    #    norm = _h[model.eft_plot_points[0]['eft']['name']][feature].Integral()
-    #    if norm>0:
-    #        for eft_plot_point in model.eft_plot_points:
-    #            _h[eft_plot_point['eft']['name']][feature].Scale(1./norm) 
 
-    histos = [h[i_quantile][feature] for i_quantile in range(len(score_bins)-1)]
-    
-    # stack
-    for i_h, h_ in enumerate(histos):
-        if i_h==0: continue
-        h_.Add(histos[i_h-1])
-    max_   = histos[-1].GetMaximum() 
+    histos = [h[WC][feature] for WC in args.WCs]
+    max_   = max( map( lambda h__:h__.GetMaximum(), histos ))
+    min_   = min( map( lambda h__:h__.GetMinimum(), histos ))
+    if min_<0 and abs(min_)>max_:
+        max_=abs(min_)
 
     for logY in [True, False]:
 
@@ -109,10 +100,11 @@ for i_feature, feature in enumerate(model.feature_names):
         l.SetBorderSize(0)
         for i_histo, histo in enumerate(reversed(histos)):
             histo.GetXaxis().SetTitle(model.plot_options[feature]['tex'])
-            histo.GetYaxis().SetTitle("1/#sigma_{SM}d#sigma/d%s"%model.plot_options[feature]['tex'])
+            histo.GetYaxis().SetTitle("score")
             if i_histo == 0:
                 histo.Draw('hist')
-                histo.GetYaxis().SetRangeUser( (0.001 if logY else 0), (10*max_ if logY else 1.3*max_))
+                histo.GetYaxis().SetRangeUser( (0.001 if logY else -1.3*max_), (10*max_ if logY else 2*1.3*max_))
+                #FIXME histo.GetYaxis().SetRangeUser( (0.001 if logY else 0), (10*max_ if logY else 1.3*max_))
 
                 histo.Draw('hist')
             else:
@@ -121,7 +113,7 @@ for i_feature, feature in enumerate(model.feature_names):
             c1.SetLogy(logY)
         l.Draw()
 
-        plot_directory_ = os.path.join( plot_directory, "score_plots", "log" if logY else "lin" )
+        plot_directory_ = os.path.join( plot_directory, "expected_score_plots", "log" if logY else "lin" )
         helpers.copyIndexPHP( plot_directory_ )
         c1.Print( os.path.join( plot_directory_, feature+'.png' ))
 

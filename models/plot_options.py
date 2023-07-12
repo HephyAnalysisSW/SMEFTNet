@@ -1,5 +1,6 @@
 import ROOT
 import math
+import numpy as np
 
 plot_options =  {
 
@@ -180,4 +181,8 @@ plot_options =  {
     "delphesJet_ecfU1beta2"         :{'binning':[50,0,0.2], 'tex':"ecfU1beta2"},
     "delphesJet_ecfU2beta2"         :{'binning':[50,0,0.01], 'tex':"ecfU2beta2"},
     "delphesJet_ecfU3beta2"         :{'binning':[50,0,0.001], 'tex':"ecfU3beta2"},
+}
+
+extra_plots = {
+    "parton_hadV_angle_phi":        {'binning':[50,-1,1], 'tex':'sin(#phi)'}, 'postfix':'_sin', 'func':np.sin,
 }

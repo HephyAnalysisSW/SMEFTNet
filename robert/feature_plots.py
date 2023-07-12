@@ -78,7 +78,6 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
     for i_feature, feature in enumerate(model.feature_names):
         h[name][feature]        = ROOT.TH1F(name+'_'+feature+'_nom',    name+'_'+feature, *model.plot_options[feature]['binning'] )
         h_lin[name][feature]    = ROOT.TH1F(name+'_'+feature+'_nom_lin',name+'_'+feature+'_lin', *model.plot_options[feature]['binning'] )
-
     ## make reweights for x-check
     #reweight     = copy.deepcopy(weights[()])
     ## linear term
@@ -107,6 +106,12 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
         h[name][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights) )
         h_lin[name][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights_lin) )
 
+        if feature=="parton_hadV_angle_phi": #FIXME
+            h[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights) )
+            h_lin[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights_lin) ) 
+            if not model.plot_options[feature]['tex'].startswith('cos'):
+                model.plot_options[feature]['tex'] = "cos(%s)"%(model.plot_options[feature]['tex'])
+
         h[name][feature].SetLineWidth(2)
         h[name][feature].SetLineColor( eft_plot_point['color'] )
         h[name][feature].SetMarkerStyle(0)
@@ -117,10 +122,6 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
         h_lin[name][feature].SetMarkerStyle(0)
         h_lin[name][feature].SetMarkerColor(eft_plot_point['color'])
         h_lin[name][feature].legendText = tex_name+(" (lin)" if name!="SM" else "")
-
-        ##FIXME
-        #if i_eft == 3 and feature == "parton_hadV_angle_phi":
-        #    assert False, ""
 
 for i_feature, feature in enumerate(model.feature_names):
 
