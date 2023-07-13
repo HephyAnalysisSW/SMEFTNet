@@ -21,6 +21,9 @@ import tools.syncer as syncer
 import tools.user as user
 import tools.helpers as helpers
 
+prefix = 'dummy_v1'
+epochs = 300
+
 torch.set_num_threads(8)
 
 branches  = ['parton_hadV_angle_phi', 'p_C', 'delphesJet_dR_hadV_maxq1q2', 'delphesJet_dR_matched_hadV_parton']
@@ -86,7 +89,8 @@ train_loader      = DataLoader(train, batch_size=len(train))
 test_loader       = DataLoader(test,  batch_size=len(test))
 train_loader_eval = DataLoader(train, batch_size=len(train))
 
-optimizer = optim.RMSprop(model.parameters(), lr=0.005, momentum=0)
+#optimizer = optim.RMSprop(model.parameters(), lr=0.005, momentum=0)
+optimizer = optim.Adam(model.parameters(), lr=0.005)
 
 #def loss( estimate, weight, truth):
 #    if not estimate.ndim==weight.ndim==truth.ndim:
@@ -112,7 +116,7 @@ loss_test=[]
 #     plt.clf()
 #     print(kk)
 
-for epoch in range(50):
+for epoch in range(epochs):
 
     for phi, weight, truth in tqdm( train_loader ):
         optimizer.zero_grad()
@@ -144,13 +148,13 @@ for epoch in range(50):
 
             #plt.hist( (weight*(estimate.view(-1)-truth)**2 ).numpy(), bins=200)
             #plt.yscale('log')
-            #plt.savefig(os.path.join(user.plot_directory, 'dummy', f'loss_per_event_{epoch}.png'))
+            #plt.savefig(os.path.join(user.plot_directory, prefix, f'loss_per_event_{epoch}.png'))
             #plt.clf() 
 
             #hist,bins,_=plt.hist( estimate.numpy(), bins=bins, label='Train')
 
         #plt.legend()
-        #plt.savefig(os.path.join(user.plot_directory, 'dummy', f"hist_epoch_{epoch}.png"))
+        #plt.savefig(os.path.join(user.plot_directory, prefix, f"hist_epoch_{epoch}.png"))
         #plt.clf()
 
         score.Divide(norm)
@@ -160,13 +164,15 @@ for epoch in range(50):
         score.SetLineStyle(2)
         score.Draw()
         pred.Draw("same")
-        c1.Print(os.path.join(user.plot_directory, 'dummy', f'closure_{epoch}.png'))
+        c1.Print(os.path.join(user.plot_directory, prefix, 'closure_%03i.png'%epoch))
         syncer.sync()
+
+syncer.makeRemoteGif(os.path.join(user.plot_directory, prefix), pattern="closure_*.png", name=fname, delay=delay)
 
 plt.plot(loss_train[1:], label='train')
 plt.plot(loss_test[1:] , label='test')
-plt.savefig(os.path.join(user.plot_directory, 'dummy','training.png'))
+plt.savefig(os.path.join(user.plot_directory, prefix,'training.png'))
 plt.clf()
 
-copyIndexPHP( os.path.join( user.plot_directory, 'dummy') )
+helpers.copyIndexPHP( os.path.join( user.plot_directory, prefix) )
 syncer.sync()
