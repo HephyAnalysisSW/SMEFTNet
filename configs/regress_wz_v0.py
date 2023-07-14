@@ -27,8 +27,8 @@ dRN = 0.4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-#scalar_features = ["genJet_pt"]
-scalar_features = []
+scalar_features = ["genJet_pt"]
+#scalar_features = []
 
 data_model = WZModel(what='VV', scalar_features = scalar_features)
 #data_model = WZModel(what='lab')

@@ -128,7 +128,8 @@ class SMEFTNet(torch.nn.Module):
     def __init__(self, 
             num_classes  = 1, 
             num_features = 0, 
-            num_scalar_features = 0, 
+            num_scalar_features = 0,
+            scalar_batch_norm = True, 
             conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), 
             dRN=0.4, 
             readout_params=(0.0, [32, 32]), 
@@ -136,10 +137,12 @@ class SMEFTNet(torch.nn.Module):
         super().__init__()
 
         self.learn_from_gamma = learn_from_gamma
-        self.regression   = regression
-        self.num_classes  = num_classes
-        self.num_features = num_features
+        self.regression          = regression
+        self.num_classes         = num_classes
+        self.num_features        = num_features
         self.num_scalar_features = num_scalar_features
+        self.scalar_batch_norm   = torch.nn.BatchNorm1d(num_scalar_features) if (num_scalar_features>0 and scalar_batch_norm) else None
+
         self.EC = torch.nn.ModuleList()
 
         for l, (dropout, hidden_layers) in enumerate(conv_params):
@@ -213,7 +216,8 @@ class SMEFTNet(torch.nn.Module):
         else:
             # prepend scalar_features to feed into MLP
             if scalar_features is not None:
-                x = torch.cat( (scalar_features, x), 1)
+                y = self.scalar_batch_norm(scalar_features) if self.scalar_batch_norm is not None else scalar_features
+                x = torch.cat( (y, x), 1)
 
             if self.learn_from_gamma == True:
                 if self.regression: 
