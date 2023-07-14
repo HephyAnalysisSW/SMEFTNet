@@ -125,13 +125,21 @@ class EIRCGNN(EdgeConv):
 norm_kwargs={}#'track_running_stats':False}
 
 class SMEFTNet(torch.nn.Module):
-    def __init__(self, num_classes=1, num_features = 0, conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), dRN=0.4, readout_params=(0.0, [32, 32]), learn_from_gamma=False, regression=False):
+    def __init__(self, 
+            num_classes  = 1, 
+            num_features = 0, 
+            num_scalar_features = 0, 
+            conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), 
+            dRN=0.4, 
+            readout_params=(0.0, [32, 32]), 
+            learn_from_gamma=False, regression=False):
         super().__init__()
 
         self.learn_from_gamma = learn_from_gamma
         self.regression   = regression
         self.num_classes  = num_classes
         self.num_features = num_features
+        self.num_scalar_features = num_scalar_features
         self.EC = torch.nn.ModuleList()
 
         for l, (dropout, hidden_layers) in enumerate(conv_params):
@@ -148,7 +156,7 @@ class SMEFTNet(torch.nn.Module):
         if self.learn_from_gamma:
             EC_out_chn += 2
 
-        self.mlp = MLP( [EC_out_chn]+readout_params[1]+[num_classes], dropout=readout_params[0], act="LeakyRelu",norm_kwargs=norm_kwargs)
+        self.mlp = MLP( [EC_out_chn+self.num_scalar_features]+readout_params[1]+[num_classes], dropout=readout_params[0], act="LeakyRelu",norm_kwargs=norm_kwargs)
 
         if not self.regression:
             self.out = torch.nn.Sigmoid()
@@ -170,7 +178,7 @@ class SMEFTNet(torch.nn.Module):
         model.eval()
         return model
 
-    def forward(self, pt, angles, features=None, message_logging=False, return_EIRCGNN_output=False):
+    def forward(self, pt, angles, features=None, scalar_features=None, message_logging=False, return_EIRCGNN_output=False):
 
         # for IRC tests we actually low zero pt. Zero abs angles define the mask
         mask = (pt != 0)
@@ -193,6 +201,7 @@ class SMEFTNet(torch.nn.Module):
         if torch.any( torch.isnan(wj)):
             print ("Warning! Found nan in pt weighted readout. Are there no particles with pt>0?. Replace with zero.")
             wj = torch.nan_to_num(wj)
+
         # disregard first column (pt, keep the last two ones: cos/sin gamma)
         x = torch.zeros((len(batch.unique()),x[:,1:].shape[1]),dtype=torch.float).to(device).index_add_(0, batch, wj.view(-1,1)*x[:,1:])
 
@@ -200,8 +209,12 @@ class SMEFTNet(torch.nn.Module):
         if return_EIRCGNN_output:
             if self.learn_from_gamma == True:
                 return x 
-        # THIS is the default case -> we pass the pooled message through the output MLP & the 'out' layer (except for regression where we don't do that)
+        # THIS is the default case -> we pass the pooled message through the output MLP & the 'out' layer (except for regression where we don't use the 'out' layer)
         else:
+            # prepend scalar_features to feed into MLP
+            if scalar_features is not None:
+                x = torch.cat( (scalar_features, x), 1)
+
             if self.learn_from_gamma == True:
                 if self.regression: 
                     return torch.cat( (self.mlp( x ), x[:, -2:]), dim=1)

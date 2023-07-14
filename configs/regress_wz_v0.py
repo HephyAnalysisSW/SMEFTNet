@@ -27,7 +27,10 @@ dRN = 0.4
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-data_model = WZModel(what='VV')
+#scalar_features = ["genJet_pt"]
+scalar_features = []
+
+data_model = WZModel(what='VV', scalar_features = scalar_features)
 #data_model = WZModel(what='lab')
 
 from SMEFTNet import SMEFTNet
@@ -36,6 +39,7 @@ model = SMEFTNet(
     conv_params=conv_params,
     readout_params=readout_params,
     learn_from_gamma=True,
+    num_scalar_features=len(scalar_features),
     num_classes = 1,
     regression=True,
    ).to(device)

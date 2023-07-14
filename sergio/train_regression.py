@@ -85,12 +85,16 @@ for epoch in range(epoch_min, args.epochs):
     pt_test=None
     pbar=tqdm.tqdm(config.data_model.data_generator)
     for data in pbar:
-        pt, angles, features, weights, truth = config.data_model.getEvents(data)
+        pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(data)
         train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
 
         optimizer.zero_grad()
 
-        out  = config.model(pt=pt[train_mask], angles=angles[train_mask], features=features[train_mask] if features is not None else None)
+        out  = config.model(
+            pt=pt[train_mask], 
+            angles=angles[train_mask], 
+            features=features[train_mask] if features is not None else None,
+            scalar_features=scalar_features[train_mask] if scalar_features is not None else None,)
         loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
         pbar.set_description(f'Loss: {loss.item()}')
 
@@ -101,17 +105,23 @@ for epoch in range(epoch_min, args.epochs):
             pt_test=pt[~train_mask]
             angles_test=angles[~train_mask]
             features_test=features[~train_mask] if features is not None else None
+            scalar_features_test=scalar_features[~train_mask] if scalar_features is not None else None
             weights_test=None
             truth_test=truth[~train_mask]
         else:
             pt_test=torch.cat((pt_test,pt[~train_mask]),axis=0)
             angles_test=torch.cat((angles_test,angles[~train_mask]),axis=0)
             features_test=torch.cat((features_test,features[~train_mask]),axis=0) if features is not None else None
+            scalar_features_test=torch.cat((scalar_features_test,scalar_features[~train_mask]),axis=0) if scalar_features is not None else None
             weights_test=None
             truth_test=torch.cat((truth_test,truth[~train_mask]),axis=0)
             
     with torch.no_grad():
-        out_test  =  config.model(pt=pt_test, angles=angles_test, features=features_test if features is not None else None)
+        out_test  =  config.model(
+            pt=pt_test, 
+            angles=angles_test, 
+            features=features_test if features is not None else None,
+            scalar_features=scalar_features_test if scalar_features is not None else None,)
         loss_test = config.loss( out_test, truth_test, weights_test)
         print(f"Test loss is {loss_test}")
         plt.hist2d(  out_test[:,0].numpy(),  truth_test.numpy() , bins=30)

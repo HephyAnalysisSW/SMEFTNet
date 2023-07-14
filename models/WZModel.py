@@ -30,7 +30,7 @@ def dphi(phi1,phi2):
     return dph + 2*np.pi*(dph < -np.pi) - 2*np.pi*(dph > np.pi)
 
 class WZModel:
-    def __init__( self, charged=False,  what='lab'):
+    def __init__( self, charged=False,  scalar_features = [], what='lab'):
         self.what = what
         self.charged = charged
         if self.what == 'lab': 
@@ -49,8 +49,19 @@ class WZModel:
             ]
         else:
             raise NotImplementedError
+
         if self.charged:
             branches+=["gen_charge"]
+
+        if scalar_features is not None and len(scalar_features)>0:
+            self.scalar_features = scalar_features
+            if not type(self.scalar_features)==type([]): raise RuntimeError ("Need a list of scalar features")
+            for feature in scalar_features:
+                if feature not in branches:
+                    branches.append( feature)
+        else:
+            self.scalar_features = None 
+        
 
         self.data_generator =  DataGenerator(
             input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300/*.root" )],
@@ -59,6 +70,7 @@ class WZModel:
             selection           = selection,
             branches            = branches,
         )
+        
 
     def getEvents(self, data):
         padding = 40
@@ -72,7 +84,12 @@ class WZModel:
             charge   = DataGenerator.vector_branch( data, 'gen_charge',padding_target=padding ) # [ptmask
             features = (torch.Tensor(charge).to(device) * ptmask).view(-1,padding,1)  
         else:
-            features = None 
+            features = None
+
+        if self.scalar_features: 
+            scalar_features = torch.Tensor(DataGenerator.scalar_branches(data, self.scalar_features)).to(device)
+        else:
+            scalar_features = None
 
         if self.what == 'lab':
             detas = torch.Tensor(DataGenerator.vector_branch( data, 'gen_Deta_lab',padding_target=padding )).to(device)
@@ -92,7 +109,7 @@ class WZModel:
             parton_hadV_q1_phi = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_hadV_angle_phi'])).to(device)
             truth = parton_hadV_q1_phi[:,0]
 
-        return pts, angles, features, weights, truth 
+        return pts, angles, features, scalar_features, weights, truth 
             
 
 if __name__=="__main__":
@@ -101,7 +118,7 @@ if __name__=="__main__":
     model = WZModel()
     total = 0
     for data in model.data_generator:
-        pts, gamma, _, truth   = model.getEvents(data)
+        pts, gamma, features, scalar_features, weights, truth   = model.getEvents(data)
         print ("len(pts)", len(pts))
         total += len(pts)
 

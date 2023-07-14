@@ -107,7 +107,7 @@ for epoch in range(epoch_min, args.epochs):
     n_samples = 0
     optimizer.zero_grad()
     for i_data, data in enumerate(config.data_model.data_generator):
-        pt, angles, features, weights, truth = config.data_model.getEvents(data)
+        pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(data)
         if args.clip is not None:
             len_before = len(pt)
             #selection = helpers.clip_quantile( config.data_model.getScalarFeatures( data ), args.clip, return_selection = True )
@@ -115,21 +115,29 @@ for epoch in range(epoch_min, args.epochs):
             pt          = pt[selection]
             angles      = angles[selection]
             features    = features[selection] if features is not None else None
+            scalar_features    = scalar_features[selection] if scalar_features is not None else None
             weights     = weights[selection]
             truth       = truth[selection]
             #print ("Weight clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
 
         train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
         #print ("Training data set %i/%i" % (i_data, len(config.data_model.data_generator)))
-
-        out  = model(pt=pt[train_mask], angles=angles[train_mask], features=features[train_mask] if features is not None else None)
+        out  = config.model(
+            pt=pt[train_mask],
+            angles=angles[train_mask],
+            features=features[train_mask] if features is not None else None,
+            scalar_features=scalar_features[train_mask] if scalar_features is not None else None,)
         loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
         n_samples += len(out)
         loss.backward()
 
         with torch.no_grad():
+            out_test  =  config.model(
+                pt=pt_test,
+                angles=angles_test,
+                features=features_test if features is not None else None,
+                scalar_features=scalar_features_test if scalar_features is not None else None,)
 
-            out_test  =  model(pt=pt[~train_mask], angles=angles[~train_mask], features=features[~train_mask] if features is not None else None)
             scale_test_train = len(out)/(len(out_test))
             loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
             loss_test*=scale_test_train

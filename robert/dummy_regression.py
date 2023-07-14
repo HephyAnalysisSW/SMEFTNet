@@ -21,8 +21,17 @@ import tools.syncer as syncer
 import tools.user as user
 import tools.helpers as helpers
 
-prefix = 'dummy_v1'
-epochs = 300
+
+# Parser
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument("--plot_directory",     action="store",      default="v2",                 help="plot sub-directory")
+argParser.add_argument("--epochs",             action="store",      nargs="*", default=300, type=int,  help="Number of epochs")
+argParser.add_argument("--learning_rate",      action="store",      nargs="*", default=0.005, type=float,  help="Learning rate")
+
+args = argParser.parse_args()
+
+plot_directory_ = os.path.join( user.plot_directory, 'dummyTraining', args.plot_directory)
 
 torch.set_num_threads(8)
 
@@ -76,11 +85,13 @@ class RootDataset(Dataset):
         return self.dphi[idx], 10**4*self.weight[idx], self.truth[idx]
 
 model = nn.Sequential(
-    nn.Linear(1,5),
+    nn.Linear(1,20),
     nn.ReLU(),
-    nn.Linear(5,5),
+    nn.Linear(20,20),
     nn.ReLU(),
-    nn.Linear(5,1),
+    nn.Linear(20,20),
+    nn.ReLU(),
+    nn.Linear(20,1),
 )
 
 dataset=RootDataset("/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/postprocessed/gen/v6/WZto2L_HT300_Ref/*.root", branches = branches)
@@ -90,7 +101,7 @@ test_loader       = DataLoader(test,  batch_size=len(test))
 train_loader_eval = DataLoader(train, batch_size=len(train))
 
 #optimizer = optim.RMSprop(model.parameters(), lr=0.005, momentum=0)
-optimizer = optim.Adam(model.parameters(), lr=0.005)
+optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
 #def loss( estimate, weight, truth):
 #    if not estimate.ndim==weight.ndim==truth.ndim:
@@ -99,7 +110,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.005)
 def loss( estimate, weight, truth):
     if not estimate.ndim==weight.ndim==truth.ndim:
         raise RuntimeError("Unintentional broadcasting! %i %i %i "%( estimate.ndim, weight.ndim, truth.ndim) )
-    return torch.mean(weight*torch.abs(estimate-truth))
+    return torch.mean(weight*(torch.sqrt(torch.abs(estimate-truth))))
 
 loss_train=[]
 loss_test=[]
@@ -116,7 +127,7 @@ loss_test=[]
 #     plt.clf()
 #     print(kk)
 
-for epoch in range(epochs):
+for epoch in range(args.epochs):
 
     for phi, weight, truth in tqdm( train_loader ):
         optimizer.zero_grad()
@@ -164,15 +175,16 @@ for epoch in range(epochs):
         score.SetLineStyle(2)
         score.Draw()
         pred.Draw("same")
-        c1.Print(os.path.join(user.plot_directory, prefix, 'closure_%03i.png'%epoch))
+        c1.Print(os.path.join(plot_directory_, 'closure_%03i.png'%epoch))
         syncer.sync()
 
-syncer.makeRemoteGif(os.path.join(user.plot_directory, prefix), pattern="closure_*.png", name=fname, delay=delay)
+
+syncer.makeRemoteGif(plot_directory_, pattern="closure_*.png", name="closure", delay=30)
 
 plt.plot(loss_train[1:], label='train')
 plt.plot(loss_test[1:] , label='test')
-plt.savefig(os.path.join(user.plot_directory, prefix,'training.png'))
+plt.savefig(os.path.join(plot_directory_,'training.png'))
 plt.clf()
 
-helpers.copyIndexPHP( os.path.join( user.plot_directory, prefix) )
+helpers.copyIndexPHP( plot_directory_ )
 syncer.sync()
