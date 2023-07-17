@@ -14,14 +14,35 @@ from tools.DataGenerator import DataGenerator
 from tools.WeightInfo    import WeightInfo
 import torch
 import tools.user as user
+import functools 
+import operator
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 selection = lambda ar: (ar.genJet_pt>500) & (ar.dR_genJet_maxq1q2 < 0.6) & (ar.genJet_SDmass > 70) & (ar.genJet_SDmass < 110)
 
-reweight_pkl = os.path.join( user.pkl_directory, 'WZto2LNoRef_HT300_reweight_card.pkl' )
+reweight_pkl = '/pnfs/psi.ch/cms/trivcat/store/user/sesanche/HadronicSMEFT/gridpacks/WZto2L_HT300_reweight_card.pkl'
 weightInfo = WeightInfo(reweight_pkl)
 weightInfo.set_order(2)
+default_eft_parameters = {p:0 for p in weightInfo.variables}
+
+def make_eft(**kwargs):
+    result = { key:val for key, val in default_eft_parameters.items() }
+    for key, val in kwargs.items():
+        if not key in weightInfo.variables+["Lambda"]:
+            raise RuntimeError ("Wilson coefficient not known.")
+        else:
+            result[key] = float(val)
+    return result
+
+def getWeights( eft, coeffs, lin=False):
+
+    if lin:
+        combs = list(filter( lambda c:len(c)<2, weightInfo.combinations))
+    else:
+        combs = weightInfo.combinations
+    fac = np.array( [ functools.reduce( operator.mul, [ (float(eft[v]) - weightInfo.ref_point_coordinates[v]) for v in comb ], 1 ) for comb in combs], dtype='float')
+    return np.matmul(coeffs[:,:len(combs)], fac)
 
 def angle( x, y):
     return torch.arctan2( y, x)
@@ -64,7 +85,7 @@ class WZModel:
         
 
         self.data_generator =  DataGenerator(
-            input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300/*.root" )],
+            input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300_Ref/*.root" )],
             n_split             = 200,
             splitting_strategy  = "files",
             selection           = selection,
@@ -78,7 +99,13 @@ class WZModel:
         ptmask = torch.ones_like( torch.Tensor(pts) ).to(device) #  (pts > 5)
         pts    = torch.Tensor(pts).to(device)   * ptmask  # 0-pad the pt < 5
 
-        weights = torch.Tensor(DataGenerator.vector_branch(data, 'p_C', padding_target=len(weightInfo.combinations))).to(device)
+        coeffs = DataGenerator.vector_branch(data, 'p_C', padding_target=len(weightInfo.combinations))
+
+        weight_sm    = torch.Tensor(coeffs[:,0])
+        weight_plus  = torch.Tensor(getWeights( make_eft( cW=1 ), coeffs))
+        weight_minus = torch.Tensor(getWeights( make_eft( cW=-1 ), coeffs))
+
+        target = 0.5*(weight_plus - weight_minus)/weight_sm
 
         if self.charged:
             charge   = DataGenerator.vector_branch( data, 'gen_charge',padding_target=padding ) # [ptmask
@@ -109,7 +136,7 @@ class WZModel:
             parton_hadV_q1_phi = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_hadV_angle_phi'])).to(device)
             truth = parton_hadV_q1_phi[:,0]
 
-        return pts, angles, features, scalar_features, weights, truth 
+        return pts, angles, features, scalar_features, torch.stack([weight_sm, target],axis=1), truth 
             
 
 if __name__=="__main__":
