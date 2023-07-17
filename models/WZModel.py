@@ -66,7 +66,7 @@ class WZModel:
             branches=["genJet_pt", "genJet_SDmass",'dR_genJet_maxq1q2',
                "ngen", 'gen_pt_lab', 'gen_Theta_VV', 'gen_phi_VV',
                'parton_hadV_angle_phi',
-               'p_C',
+               'p_C','parton_hadV_pt', 'parton_hadV_pt', 'parton_lepV_pt',
             ]
         else:
             raise NotImplementedError
@@ -134,7 +134,9 @@ class WZModel:
             angles = torch.stack(( thetas*ptmask, dphis*ptmask),axis=2)
 
             parton_hadV_q1_phi = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_hadV_angle_phi'])).to(device)
-            truth = parton_hadV_q1_phi[:,0]
+            parton_hadV_pt = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_hadV_pt'])).to(device)
+            parton_lepV_pt = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_lepV_pt'])).to(device)
+            truth = torch.stack( [parton_hadV_q1_phi[:,0], parton_hadV_pt[:,0], parton_lepV_pt[:,0]], axis=1)
 
         return pts, angles, features, scalar_features, torch.stack([weight_sm, target],axis=1), truth 
             

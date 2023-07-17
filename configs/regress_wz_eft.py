@@ -57,27 +57,30 @@ def loss( out, truth, weights=None):
     target    = weights[:,1]
     return torch.mean( weight_sm*( out[:,0] - target )**2)
 
-
+truth_var_names = ['phi', 'hadV_pt', 'lepV_pt']
+ranges = [(-math.pi, math.pi), (0, 1000), (0,1000)]
 def plot( out, truth, weights, model_directory, epoch):
     weight_sm = weights[:,0]
     target    = weights[:,1]
 
 
-    score = ROOT.TH1F("score", "score", 50, -math.pi, math.pi)
-    pred  = ROOT.TH1F("pred", "pred", 50, -math.pi, math.pi)
-    norm  = ROOT.TH1F("norm", "norm", 50, -math.pi, math.pi)
+    for var, (varname, (xlow,xhigh)) in enumerate(zip(truth_var_names,ranges)):
+        score = ROOT.TH1F("score_%s"%varname, "score", 50, xlow, xhigh)
+        pred  = ROOT.TH1F("pred_%s"%varname , "pred" , 50, xlow, xhigh)
+        norm  = ROOT.TH1F("norm_%s"%varname , "norm" , 50, xlow, xhigh)
 
-    
-    score.Add( helpers.make_TH1F( np.histogram(truth, np.linspace(-math.pi, math.pi, 50+1), weights=weight_sm*target) ))
-    pred .Add( helpers.make_TH1F( np.histogram(truth, np.linspace(-math.pi, math.pi, 50+1), weights=weight_sm*out[:,0]) ))
-    norm .Add( helpers.make_TH1F( np.histogram(truth, np.linspace(-math.pi, math.pi, 50+1), weights=weight_sm)) )
+        
+        score.Add( helpers.make_TH1F( np.histogram(truth[:,var], np.linspace(xlow, xhigh, 50+1), weights=weight_sm*target) ))
+        pred .Add( helpers.make_TH1F( np.histogram(truth[:,var], np.linspace(xlow, xhigh, 50+1), weights=weight_sm*out[:,0]) ))
+        norm .Add( helpers.make_TH1F( np.histogram(truth[:,var], np.linspace(xlow, xhigh, 50+1), weights=weight_sm)) )
+        
+        score.Divide(norm)
+        pred.Divide(norm)
 
-    score.Divide(norm)
-    pred.Divide(norm)
-
-    c1 = ROOT.TCanvas()
-    score.SetLineStyle(2)
-    score.Draw()
-    pred.Draw("same")
-    c1.Print( 'closure_%03i.png'%epoch)
+        c1 = ROOT.TCanvas()
+        score.SetLineStyle(2)
+        score.GetXaxis().SetTitle(varname)
+        score.Draw()
+        pred.Draw("same")
+        c1.Print( 'closure_%s_%03i.png'%(varname,epoch))
     
