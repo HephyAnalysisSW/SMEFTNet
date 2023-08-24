@@ -19,6 +19,7 @@ parser.add_argument('--config', action='store', default='regress_genTops_lin_ctW
 parser.add_argument('--training', action='store', default='v4_0p4_2020_2020')
 parser.add_argument('--xmin', action='store', default=-.5, type=float)
 parser.add_argument('--xmax', action='store', default=+.5, type=float)
+parser.add_argument('--nBins', action='store', default=20, type=int)
 parser.add_argument('--varName', action='store', default='C_{tG}^{Re}', help="Which prefix?")
 
 args = parser.parse_args()
@@ -83,7 +84,7 @@ for i_filename,  filename in enumerate(files[0::every]):
     model_state = torch.load(filename, map_location=device)
     model.load_state_dict(model_state)
     out = model( pt, angles, features=features, scalar_features=scalar_features)
-    h = ROOT.TH2F( "R", "R", 20,args.xmin, args.xmax,20,args.xmin,args.xmax)
+    h = ROOT.TH2F( "R", "R", args.nBins,args.xmin, args.xmax,args.nBins, args.xmin, args.xmax)
     for R_pred, R_true in zip(func(out).numpy(), truth.numpy()):
         h.Fill( R_true, R_pred)
 

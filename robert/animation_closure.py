@@ -30,7 +30,7 @@ argParser.add_argument("--config",              action="store",      default="re
 argParser.add_argument("--prefix",              action="store",      default='closure',                  help="prefix?")
 argParser.add_argument("--training",           action="store",      default="v4_0p8_2020_2020",              help="Which training?")
 argParser.add_argument("--WC",                 action="store",      default="ctWRe", type=str,  help="Which WC?")
-argParser.add_argument("--epochs",             action="store",      nargs="*", type=int,  help="Which epochs to plot?")
+argParser.add_argument("--every",             action="store",      type=int,  default = 5, help="Which epochs to plot?")
 argParser.add_argument('--clip',  action='store', type=float,   default=None)
 #argParser.add_argument("--input_files",        action="store",      default="/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/predictions/ctGIm/TT01j_HT800_ext_comb/output_*.root", type=str,  help="input files")
 
@@ -97,9 +97,7 @@ for i_der, der in enumerate(derivatives):
         color[der] = ROOT.kGreen + i_mixed
         i_mixed+=1
 
-every = 5
-
-for i_filename, filename in enumerate(files[0::every]):
+for i_filename, filename in enumerate(files[0::args.every]):
     stuff = []
     epoch = int(filename.split('-')[-1].split('_')[0])
     print('At %s' % filename)
