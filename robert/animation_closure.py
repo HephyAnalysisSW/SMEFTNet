@@ -38,7 +38,7 @@ args = argParser.parse_args()
 
 exec("import configs.%s as config"%args.config)
 
-#config.data_model.data_generator.reduceFiles(to=10)
+config.data_model.data_generator.reduceFiles(to=10)
 
 # directory for plots
 plot_directory = os.path.join( user.plot_directory, args.plot_directory, args.config, (args.prefix + '_' if args.prefix is not None else '') + args.training)
@@ -59,9 +59,11 @@ model_directory = "/groups/hephy/cms/robert.schoefbeck/NN/models/SMEFTNet/%s/%s/
 files = glob.glob( os.path.join( model_directory, 'epoch-*_state.pt') )
 
 data = config.data_model.data_generator[-1]
-pt, angles, features, _, truth = config.data_model.getEvents(data)
+pt, angles, features, scalar_features, _, truth = config.data_model.getEvents(data)
 weights                        = config.data_model.getWeightDict(data)
-scalar_features                = config.data_model.getScalarFeatures(data)
+observers = list(config.model.plot_options.keys())
+
+observer_features = config.data_model.getScalarFeatures( data, observers ) 
 
 if args.clip is not None:
     len_before = len(pt)
@@ -70,9 +72,10 @@ if args.clip is not None:
     pt          = pt[selection]
     angles      = angles[selection]
     features    = features[selection] if features is not None else None
+    scalar_features  = scalar_features[selection] if scalar_features is not None else None
+    observer_features = observer_features[selection] if observer_features is not None else None
     weights     = {k:v[selection] for k,v in weights.items()}
     truth       = truth[selection]
-    scalar_features = scalar_features[selection]
     print ("Auto clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
 
 # GIF animation
@@ -115,10 +118,14 @@ for i_filename, filename in enumerate(files[0::every]):
     model_state = torch.load(filename, map_location=device)
     model.load_state_dict(model_state)
 
-    predictions = model( pt, angles, features)
+    predictions = model( pt, angles, features=features, scalar_features=scalar_features)
 
     # drop angles
-    predictions = predictions[:,:-2].numpy()
+    if len(model.EC)>0:
+        predictions = predictions[:,:-2].numpy()
+    else:
+        predictions = predictions.numpy()
+
     if predictions.ndim==1:
         predictions=predictions.reshape(-1,1) 
 
@@ -200,9 +207,9 @@ for i_filename, filename in enumerate(files[0::every]):
     #    c1.Print( os.path.join( plot_directory_, "training_2D_epoch_%05i.png"%(epoch) ) )
     #    syncer.makeRemoteGif(plot_directory_, pattern="training_2D_epoch_*.png", name="training_2D_epoch" )
 
-    for observables, scalar_features, postfix in [
+    for observables, observable_features, postfix in [
         #( model.observers if hasattr(model, "observers") else [], observers, "_observers"),
-        ( config.data_model.scalar_features, scalar_features, ""),
+        ( observers, observer_features, ""),
             ]:
         if len(observables)==0: continue
         h_w0, h_ratio_prediction, h_ratio_truth, lin_binning = {}, {}, {}, {}
@@ -213,7 +220,7 @@ for i_filename, filename in enumerate(files[0::every]):
             # linspace binning
             lin_binning[feature] = np.linspace(binning[1], binning[2], binning[0]+1)
             #digitize feature
-            binned      = np.digitize(scalar_features[:,i_feature], lin_binning[feature] )
+            binned      = np.digitize(observable_features[:,i_feature], lin_binning[feature] )
             # for each digit, create a mask to select the corresponding event in the bin (e.g. test_features[mask[0]] selects features in the first bin
             mask        = np.transpose( binned.reshape(-1,1)==range(1,len(lin_binning[feature])) )
             h_w0[feature]           = np.array([  w0[m].sum() for m in mask])

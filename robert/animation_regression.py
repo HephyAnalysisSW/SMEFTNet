@@ -19,10 +19,9 @@ parser.add_argument('--config', action='store', default='regress_genTops_lin_ctW
 parser.add_argument('--training', action='store', default='v4_0p4_2020_2020')
 parser.add_argument('--xmin', action='store', default=-.5, type=float)
 parser.add_argument('--xmax', action='store', default=+.5, type=float)
-parser.add_argument('--varName', action='store', default='C_{tW}^{Re}', help="Which prefix?")
+parser.add_argument('--varName', action='store', default='C_{tG}^{Re}', help="Which prefix?")
 
 args = parser.parse_args()
-
 
 delay  = 50/5
 
@@ -41,7 +40,7 @@ exec("import configs.%s as config"%args.config)
 
 config.data_model.data_generator.reduceFiles(to=10)
 
-pt, angles, features, weights, truth = config.data_model.getEvents(config.data_model.data_generator[-1])
+pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(config.data_model.data_generator[-1])
 
 #scalar_features = config.data_model.data_generator.scalar_branches( config.data_model.data_generator[-1], model.feature_names )
 
@@ -83,7 +82,7 @@ for i_filename,  filename in enumerate(files[0::every]):
 
     model_state = torch.load(filename, map_location=device)
     model.load_state_dict(model_state)
-    out = model( pt, angles, features)
+    out = model( pt, angles, features=features, scalar_features=scalar_features)
     h = ROOT.TH2F( "R", "R", 20,args.xmin, args.xmax,20,args.xmin,args.xmax)
     for R_pred, R_true in zip(func(out).numpy(), truth.numpy()):
         h.Fill( R_true, R_pred)

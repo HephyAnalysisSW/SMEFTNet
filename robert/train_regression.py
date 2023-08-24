@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--overwrite', action='store_true', default=False, help="restart training?")
 parser.add_argument('--prefix',    action='store', default='v1', help="Prefix for training?")
 parser.add_argument('--config',    action='store', default='regressJet', help="Which config?")
-parser.add_argument('--learning_rate', '--lr',    action='store', default=0.001, help="Learning rate")
+parser.add_argument('--learning_rate', '--lr',    action='store', type=float, default=0.001, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
 #parser.add_argument('--load_every', action='store', default=5, type=int, help="Load new chunk of data every this number of epochs.")
 parser.add_argument('--clip',  action='store', type=float,   default=None)
@@ -122,7 +122,7 @@ for epoch in range(epoch_min, args.epochs):
 
         train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
         #print ("Training data set %i/%i" % (i_data, len(config.data_model.data_generator)))
-        out  = config.model(
+        out  = model(
             pt=pt[train_mask],
             angles=angles[train_mask],
             features=features[train_mask] if features is not None else None,
@@ -132,11 +132,11 @@ for epoch in range(epoch_min, args.epochs):
         loss.backward()
 
         with torch.no_grad():
-            out_test  =  config.model(
-                pt=pt_test,
-                angles=angles_test,
-                features=features_test if features is not None else None,
-                scalar_features=scalar_features_test if scalar_features is not None else None,)
+            out_test = model(
+                pt=pt[~train_mask],
+                angles=angles[~train_mask],
+                features=features[~train_mask] if features is not None else None,
+                scalar_features=scalar_features[~train_mask] if scalar_features is not None else None,)
 
             scale_test_train = len(out)/(len(out_test))
             loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
@@ -157,7 +157,7 @@ for epoch in range(epoch_min, args.epochs):
                     loss.item(), loss_test.item(), 
                     model.cfg_dict["train_losses"] [-1], model.cfg_dict["test_losses" ][-1]), 
                     end="\r")
-    print ("mean(truth), mean(out)", truth.mean(), out[:,0].mean())
+    print ("mean(truth), mean(out)", truth.mean().item(), out[:,0].mean().item())
     optimizer.step()
 
     print ("")

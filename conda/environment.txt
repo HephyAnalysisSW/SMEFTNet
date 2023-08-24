@@ -20,3 +20,4 @@ uproot
 uproot3
 xxhash
 tensorflow
+torchsummary
