@@ -28,6 +28,7 @@ default_eft_parameters = {p:0 for p in weightInfo.variables}
 
 def make_eft(**kwargs):
     result = { key:val for key, val in default_eft_parameters.items() }
+
     for key, val in kwargs.items():
         if not key in weightInfo.variables+["Lambda"]:
             raise RuntimeError ("Wilson coefficient not known.")
@@ -51,8 +52,9 @@ def dphi(phi1,phi2):
     return dph + 2*np.pi*(dph < -np.pi) - 2*np.pi*(dph > np.pi)
 
 class WZModel:
-    def __init__( self, charged=False,  scalar_features = [], what='lab'):
+    def __init__( self, charged=False,  scalar_features = [], what='lab', operator='cW'):
         self.what = what
+        self.operator = operator
         self.charged = charged
         if self.what == 'lab': 
             branches=[
@@ -82,16 +84,14 @@ class WZModel:
                     branches.append( feature)
         else:
             self.scalar_features = None 
-        
 
         self.data_generator =  DataGenerator(
-            input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300_Ref/*.root" )],
+            input_files = [os.path.join( user.data_directory, "v6/WZto2L_HT300_Ref_comb/*.root" )],
             n_split             = 200,
             splitting_strategy  = "files",
             selection           = selection,
             branches            = branches,
         )
-        
 
     def getEvents(self, data):
         padding = 40
@@ -102,8 +102,10 @@ class WZModel:
         coeffs = DataGenerator.vector_branch(data, 'p_C', padding_target=len(weightInfo.combinations))
 
         weight_sm    = torch.Tensor(coeffs[:,0])
-        weight_plus  = torch.Tensor(getWeights( make_eft( cW=1 ), coeffs))
-        weight_minus = torch.Tensor(getWeights( make_eft( cW=-1 ), coeffs))
+        kwargs_p={self.operator : 1}
+        kwargs_m={self.operator : -1}
+        weight_plus  = torch.Tensor(getWeights( make_eft( **kwargs_p ), coeffs))
+        weight_minus = torch.Tensor(getWeights( make_eft( **kwargs_m ), coeffs))
 
         target = 0.5*(weight_plus - weight_minus)/weight_sm
 
@@ -137,8 +139,15 @@ class WZModel:
             parton_hadV_pt = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_hadV_pt'])).to(device)
             parton_lepV_pt = torch.Tensor(DataGenerator.scalar_branches(data, ['parton_lepV_pt'])).to(device)
             truth = torch.stack( [parton_hadV_q1_phi[:,0], parton_hadV_pt[:,0], parton_lepV_pt[:,0]], axis=1)
-
-        return pts, angles, features, scalar_features, torch.stack([weight_sm, target],axis=1), truth 
+        mask = (pts.sum(axis=1) > 0)
+        pts=pts[mask]
+        angles=angles[mask]
+        scalar_features=scalar_features[mask]
+        truth=truth[mask]
+        weight_sm=weight_sm[mask]
+        target=target[mask]
+        
+        return pts, angles, features, scalar_features, torch.stack([weight_sm, target],axis=1), truth
             
 
 if __name__=="__main__":

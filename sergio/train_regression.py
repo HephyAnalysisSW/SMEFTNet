@@ -21,13 +21,14 @@ parser.add_argument('--nSplit', action='store', default=1000, type=int, help="Nu
 args = parser.parse_args()
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-if torch.cuda.is_available():
-    torch.set_num_threads(8)
+if not torch.cuda.is_available():
+    print("Hola")
+    torch.set_num_threads(16)
 
 import sys
 sys.path.insert(0, '..')
 import tools.user as user
-
+from collections import defaultdict 
 exec("import configs.%s as config"%args.config)
 
 # reproducibility
@@ -43,7 +44,6 @@ os.makedirs( model_directory, exist_ok=True)
 print ("Using model directory", model_directory)
 
 ################### model, scheduler, loss #######################
-config.model.train()
 optimizer = torch.optim.Adam(config.model.parameters(), lr=float(args.learning_rate))
 scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=1./20)
 
@@ -84,9 +84,12 @@ for epoch in range(epoch_min, args.epochs):
     #    print ("New training and test dataset.")
     pt_test=None
     pbar=tqdm.tqdm(config.data_model.data_generator)
+    test_elements=defaultdict(list)
     for data in pbar:
         pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(data)
-        train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
+        batch_size = pt.shape[0]
+        train_size = int(batch_size*0.8)
+        train_mask = (torch.cat([torch.ones(train_size), torch.zeros(batch_size-train_size)],axis=0) == 1)
 
         optimizer.zero_grad()
 
@@ -95,39 +98,33 @@ for epoch in range(epoch_min, args.epochs):
             angles=angles[train_mask], 
             features=features[train_mask] if features is not None else None,
             scalar_features=scalar_features[train_mask] if scalar_features is not None else None,)
+
         loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
         pbar.set_description(f'Loss: {loss.item()}')
 
         n_samples = len(out)
         loss.backward()
         optimizer.step()
-        if pt_test is None:
-            pt_test=pt[~train_mask]
-            angles_test=angles[~train_mask]
-            features_test=features[~train_mask] if features is not None else None
-            scalar_features_test=scalar_features[~train_mask] if scalar_features is not None else None
-            weights_test=None
-            truth_test=truth[~train_mask]
-        else:
-            pt_test=torch.cat((pt_test,pt[~train_mask]),axis=0)
-            angles_test=torch.cat((angles_test,angles[~train_mask]),axis=0)
-            features_test=torch.cat((features_test,features[~train_mask]),axis=0) if features is not None else None
-            scalar_features_test=torch.cat((scalar_features_test,scalar_features[~train_mask]),axis=0) if scalar_features is not None else None
-            weights_test=None
-            truth_test=torch.cat((truth_test,truth[~train_mask]),axis=0)
+
+        test_elements['pt'].append(pt[~train_mask])
+        test_elements['angles'].append(angles[~train_mask])
+        test_elements['scalar_features'].append(scalar_features[~train_mask] if scalar_features is not None else None)
+        test_elements['features'].append(features[~train_mask] if features is not None else None)
+        test_elements['weights'].append(weights[~train_mask])
+        test_elements['truth'].append(truth[~train_mask])
+    
+    for el in test_elements:
+        test_elements[el]=torch.cat( test_elements[el],axis=0) if test_elements[el][0] is not None else None
             
     with torch.no_grad():
         out_test  =  config.model(
-            pt=pt_test, 
-            angles=angles_test, 
-            features=features_test if features is not None else None,
-            scalar_features=scalar_features_test if scalar_features is not None else None,)
-        loss_test = config.loss( out_test, truth_test, weights_test)
+            pt=test_elements['pt'], 
+            angles=test_elements['angles'], 
+            features=test_elements['features'],
+            scalar_features=test_elements['scalar_features'])
+        loss_test = config.loss( out_test, test_elements['truth'], test_elements['weights'])
         print(f"Test loss is {loss_test}")
-        plt.hist2d(  out_test[:,0].numpy(),  truth_test.numpy() , bins=30)
-        plt.savefig( os.path.join( model_directory, f'test_cov_{epoch}.png'))
-        plt.clf()
- 
+        config.plot( out_test, test_elements['truth'], test_elements['weights'], model_directory, epoch)
         if not "test_losses" in config.model.cfg_dict:
             config.model.cfg_dict["train_losses"] = []
             config.model.cfg_dict["test_losses"] = []

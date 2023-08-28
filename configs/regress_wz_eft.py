@@ -58,7 +58,7 @@ def loss( out, truth, weights=None):
     return torch.mean( weight_sm*( out[:,0] - target )**2)
 
 truth_var_names = ['phi', 'hadV_pt', 'lepV_pt']
-ranges = [(-math.pi, math.pi), (0, 1000), (0,1000)]
+ranges = [(-math.pi, math.pi), (500, 1000), (0,1000)]
 def plot( out, truth, weights, model_directory, epoch):
     weight_sm = weights[:,0]
     target    = weights[:,1]
