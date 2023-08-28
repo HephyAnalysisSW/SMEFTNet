@@ -69,8 +69,8 @@ branches = [
                     ]
 
 data_generator = DataGenerator(
-            input_files = [os.path.join( user.data_directory, "v11/TT01j_HT800_ext_comb/TT01j_HT800_ext_comb_1.root")],
-                n_split = -1,
+            input_files = [os.path.join( user.data_directory, "v11/TT01j_HT800_ext_comb/TT01j_HT800_ext_comb_1*.root")],
+                n_split = 1,
                 splitting_strategy = "files",
                 selection   = selection,
                 branches = [
@@ -117,7 +117,7 @@ class delphesTTbarModel:
     def getEvents(self, data):
         ctgRe_coeff = DataGenerator.vector_branch( data, 'ctGRe_coeff', padding_target=3 )
         weights = ctgRe_coeff[:, 0]
-        truth = torch.Tensor(ctgRe_coeff[:, 1]/ctgRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctgRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
         #truth = -0.15*torch.ones_like(truth)
 
@@ -159,7 +159,7 @@ class delphesTTbarModel:
 
     def getWeightDict( self, data ):
         ctgRe_coeff = DataGenerator.vector_branch( data, 'ctGRe_coeff',padding_target=3 )
-        truth = torch.Tensor(ctgRe_coeff[:, 1]/ctgRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctgRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
         combinations = make_combinations( wilson_coefficients )
         coeffs = data_generator.vector_branch(data, 'p_C')
@@ -167,7 +167,7 @@ class delphesTTbarModel:
 
     def getScalarFeatures( self, data, branches = None):
         ctgRe_coeff = DataGenerator.vector_branch( data, 'ctGRe_coeff',padding_target=3 )
-        truth = torch.Tensor(ctgRe_coeff[:, 1]/ctgRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctgRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
         return DataGenerator.scalar_branches( data, self.scalar_features if branches is None else branches)[self.mask]
 
@@ -203,7 +203,9 @@ plot_options =  {
     "parton_lepTop_W_pt" :{'binning':[30,0,1000], 'tex':'p_{T}(W (t lep))'},
     "parton_lepTop_W_eta" :{'binning':[30,-3,3], 'tex':'#eta(W(t lep))'},
     "parton_lepTop_W_phi" :{'binning':[30,-pi,pi], 'tex':'#phi(W(t lep))'},
-
+    "delphesJet_lep_cosTheta_n":{'binning':[30,-1,1], 'tex':'lep cos #theta_{n}'},
+    "delphesJet_lep_cosTheta_r":{'binning':[30,-1,1], 'tex':'lep cos #theta_{r}'},
+    "delphesJet_lep_cosTheta_k":{'binning':[30,-1,1], 'tex':'lep cos #theta_{k}'},
     "delphesJet_pt"                 :{'binning':[50,500,2000], 'tex':'p_{T}(jet)'},
     "delphesJet_eta"                :{'binning':[30,-3,3], 'tex':'#eta(jet)'},
     "delphesJet_phi"                :{'binning':[30,-pi,pi], 'tex':'#phi(jet)'},

@@ -54,7 +54,7 @@ model = config.get_model(
 ################### model, scheduler, loss #######################
 model.train()
 optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
-scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=1./20)
+#scheduler = torch.optim.lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=1./20)
 
 #################### Loading previous state #####################
 model.cfg_dict = {'best_loss_test':float('inf')}
@@ -120,7 +120,10 @@ for epoch in range(epoch_min, args.epochs):
             truth       = truth[selection]
             #print ("Weight clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
 
-        train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
+        #train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
+        train_mask = torch.ones(pt.shape[0], dtype=torch.bool)
+        train_mask[int(pt.shape[0]*0.8):] = False
+
         #print ("Training data set %i/%i" % (i_data, len(config.data_model.data_generator)))
         out  = model(
             pt=pt[train_mask],
@@ -175,3 +178,18 @@ for epoch in range(epoch_min, args.epochs):
         torch.save(  model.state_dict(),     os.path.join( model_directory, 'epoch-%d_state.pt' % epoch))
         torch.save(  optimizer.state_dict(), os.path.join( model_directory, 'epoch-%d_optimizer.pt' % epoch))
         pickle.dump( model.cfg_dict,          open(os.path.join( model_directory, 'epoch-%d_cfg_dict.pkl' % epoch),'wb'))
+
+
+import ROOT
+h = ROOT.TH1F("train","train", 1000,0,1000)
+h2 = ROOT.TH1F("test","test", 1000,0,1000)
+for i in range(1000):
+    h.SetBinContent(i+1,  model.cfg_dict["train_losses"][i])
+    h2.SetBinContent(i+1, model.cfg_dict["test_losses"][i])
+
+h.Draw()
+h2.SetLineColor(ROOT.kRed)
+h2.Draw("same")
+h2.Draw("same")
+ROOT.c1.SetLogy()
+ROOT.c1.Print("loss.pdf")

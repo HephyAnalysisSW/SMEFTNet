@@ -93,7 +93,7 @@ class genTopsModel:
     def getEvents(self, data):
         ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
         weights = ctwRe_coeff[:, 0]
-        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctwRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
         #truth = -0.15*torch.ones_like(truth)
 
@@ -118,22 +118,23 @@ class genTopsModel:
         return  pts[self.mask],\
                 torch.stack( (dphis, detas), axis=-1)[self.mask],\
                 features[self.mask] if features is not None else None,\
+                None,\
                 torch.Tensor( weights ).to(device)[self.mask],\
                 truth[self.mask]
 
     def getWeightDict( self, data ):
         ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
-        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctwRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
         combinations = make_combinations( wilson_coefficients )
         coeffs = data_generator.vector_branch(data, 'p_C')
         return {comb:coeffs[:,weightInfo.combinations.index(comb)][self.mask] for comb in combinations}
 
-    def getScalarFeatures( self, data ):
+    def getScalarFeatures( self, data, branches = None):
         ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
-        truth = torch.Tensor(ctwRe_coeff[:, 1]/ctwRe_coeff[:, 0]).to(device)
+        truth = torch.Tensor(ctwRe_coeff[:, 1]).to(device)
         self.set_truth_mask(truth)
-        return DataGenerator.scalar_branches( data, self.scalar_features )[self.mask]
+        return DataGenerator.scalar_branches( data, self.scalar_features if branches is None else branches)[self.mask]
 
 tex = {"ctWRe":"C_{tW}^{Re}", "ctWIm":"C_{tW}^{Im}", "ctBIm":"C_{tB}^{Im}", "ctBRe":"C_{tB}^{Re}", "cHt":"C_{Ht}", 'cHtbRe':'C_{Htb}^{Re}', 'cHtbIm':'C_{Htb}^{Im}', 'cHQ3':'C_{HQ}^{(3)}'}
 

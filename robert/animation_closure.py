@@ -127,6 +127,8 @@ for i_filename, filename in enumerate(files[0::args.every]):
     if predictions.ndim==1:
         predictions=predictions.reshape(-1,1) 
 
+    print (model.EC[0].mlp.state_dict())
+
     w0 = weights[()]
 
     # 2D plots for convergence + animation
@@ -290,14 +292,16 @@ for i_filename, filename in enumerate(files[0::args.every]):
                 if i_feature==0:
                     l.AddEntry( th1d_yield, "yield (SM)")
 
+                #if epoch == 100 and feature =="delphesJet_lep_cosTheta_n": assert False, ""
+
                 max_ = max( map( lambda h:h.GetMaximum(), list(th1d_ratio_truth.values())+list(th1d_ratio_pred.values()) ))
-                max_ = 10**(1.5)*max_ if logY else 1.5*max_
+                max_ = 10**(1.5)*max_ if logY else (1.5*max_ if max_>0 else 0.75*max_)
                 min_ = min( map( lambda h:h.GetMinimum(), list(th1d_ratio_truth.values())+list(th1d_ratio_pred.values()) ))
                 min_ = 0.1 if logY else (1.5*min_ if min_<0 else 0.75*min_)
 
                 th1d_yield_min = th1d_yield.GetMinimum()
                 th1d_yield_max = th1d_yield.GetMaximum()
-                for bin_ in range(1, th1d_yield.GetNbinsX() ):
+                for bin_ in range(1, th1d_yield.GetNbinsX() + 1):
                     th1d_yield.SetBinContent( bin_, (th1d_yield.GetBinContent( bin_ ) - th1d_yield_min)/th1d_yield_max*(max_-min_)*0.95 + min_  )
 
                 #th1d_yield.Scale(max_/th1d_yield.GetMaximum())

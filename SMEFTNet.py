@@ -9,11 +9,43 @@ import pickle
 import glob
 import copy
 
-from torch_geometric.nn import MessagePassing, MLP
+from torch_geometric.nn import MessagePassing
 
 import sys
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+from torch_geometric.nn import MLP
+
+### alternative
+#from collections import OrderedDict
+#class MLP(torch.nn.Module):
+#    def __init__(self, layers, dropout=0, batch_norm=True, act="LeakyRelu"):
+#        super(MLP, self).__init__()
+#        layers_ = []
+#
+#        if dropout > 0:
+#            layers_.append( ('dropout', torch.nn.Dropout(p=dropout)) )
+#
+#        if batch_norm:
+#            layers_.append( ('batch_norm', torch.nn.BatchNorm1d(layers[0])) )
+#
+#        for i_layer in range(len(layers)-1):
+#            if act.lower()=="LeakyRelu".lower():
+#                act_ = torch.nn.LeakyReLU(negative_slope=0.3)
+#                layers_.append( ('act'+str(i_layer), act_) )
+#            elif act is None:
+#                pass
+#            else:
+#                raise NotImplementedError
+#
+#            layers_.append( ('dense'+str(i_layer), torch.nn.Linear(layers[i_layer], layers[i_layer+1])) )
+#
+#        self.model = torch.nn.Sequential(OrderedDict(layers_))
+# 
+#    # forward propagate input
+#    def forward(self, x):
+#        return self.model(x)
 
 class EdgeConv(MessagePassing):
     def __init__(self, mlp):
@@ -148,6 +180,7 @@ class SMEFTNet(torch.nn.Module):
             dRN=0.4, 
             readout_params=(0.0, [32, 32]), 
             readout_batch_norm="batch_norm",
+            negative_slope = 0.01,
             learn_from_gamma=False, regression=False):
         super().__init__()
 
@@ -160,6 +193,7 @@ class SMEFTNet(torch.nn.Module):
         # tuple index of features that should be included in computing the distance
         self.include_features_in_radius = include_features_in_radius
         self.readout_batch_norm = readout_batch_norm 
+        if self.readout_batch_norm and self.scalar_batch_norm: print ("Warning! Two batch norms for scalar features!")
 
         self.EC = torch.nn.ModuleList()
 
@@ -167,12 +201,14 @@ class SMEFTNet(torch.nn.Module):
             hidden_layers_ = copy.deepcopy(hidden_layers)
             hidden_layers_[-1]+=1 # separate output for gamma-coordinate 
             if l==0:
-                self.EC.append( EIRCGNN(MLP([3*(1+num_features) + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu"), dRN=dRN, 
-                                             # only include features in radius in the first layer
-                                             include_features_in_radius=include_features_in_radius ) 
-                              )
+                _mlp = MLP([3*(1+num_features) + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu")
+                _mlp.act.negative_slope = negative_slope
+                # only include features in radius in the first layer
+                self.EC.append( EIRCGNN( _mlp, dRN=dRN, include_features_in_radius=include_features_in_radius ) )
             else:
-                self.EC.append( EIRCGNN(MLP([3*conv_params[l-1][1][-1]+2]+hidden_layers_,dropout=dropout, act="LeakyRelu"), dRN=dRN ) ) 
+                _mlp = MLP([3*conv_params[l-1][1][-1]+2]+hidden_layers_,dropout=dropout, act="LeakyRelu")
+                _mlp.act.negative_slope = negative_slope
+                self.EC.append( EIRCGNN( _mlp, dRN=dRN ) ) 
 
         if len(self.EC)>0:
             # output features + cos/sin gamma
@@ -185,6 +221,7 @@ class SMEFTNet(torch.nn.Module):
             EC_out_chn = 0
 
         self.mlp = MLP( [EC_out_chn+self.num_scalar_features]+readout_params[1]+[num_classes], dropout=readout_params[0], act="LeakyRelu",batch_norm=self.readout_batch_norm)
+        self.mlp.act.negative_slope = negative_slope
 
         if not self.regression:
             self.out = torch.nn.Sigmoid()
