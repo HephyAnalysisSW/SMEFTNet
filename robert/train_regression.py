@@ -179,11 +179,11 @@ for epoch in range(epoch_min, args.epochs):
         torch.save(  optimizer.state_dict(), os.path.join( model_directory, 'epoch-%d_optimizer.pt' % epoch))
         pickle.dump( model.cfg_dict,          open(os.path.join( model_directory, 'epoch-%d_cfg_dict.pkl' % epoch),'wb'))
 
-
 import ROOT
-h = ROOT.TH1F("train","train", 1000,0,1000)
-h2 = ROOT.TH1F("test","test", 1000,0,1000)
-for i in range(1000):
+n_epoch = len(model.cfg_dict["train_losses"])
+h = ROOT.TH1F("train","train", n_epoch,0,n_epoch)
+h2 = ROOT.TH1F("test","test", n_epoch,0,n_epoch)
+for i in range(n_epoch):
     h.SetBinContent(i+1,  model.cfg_dict["train_losses"][i])
     h2.SetBinContent(i+1, model.cfg_dict["test_losses"][i])
 

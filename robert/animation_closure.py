@@ -127,7 +127,7 @@ for i_filename, filename in enumerate(files[0::args.every]):
     if predictions.ndim==1:
         predictions=predictions.reshape(-1,1) 
 
-    print (model.EC[0].mlp.state_dict())
+    #print (model.EC[0].mlp.state_dict())
 
     w0 = weights[()]
 
@@ -168,44 +168,6 @@ for i_filename, filename in enumerate(files[0::args.every]):
     n_pads = len(derivatives)
     n_col  = len(derivatives) 
     n_rows = 2
-    #for logZ in [False, True]:
-    #    c1 = ROOT.TCanvas("c1","multipads",500*n_col,500*n_rows);
-    #    c1.Divide(n_col,n_rows)
-
-    #    for i_der, der in enumerate(derivatives):
-
-    #        c1.cd(i_der+1)
-    #        ROOT.gStyle.SetOptStat(0)
-    #        th2d[der].Draw("COLZ")
-    #        ROOT.gPad.SetLogz(logZ)
-
-    #    lines = [ (0.29, 0.9, 'N_{B} =%5i'%( epoch )) ]
-    #    drawObjects = [ tex.DrawLatex(*line) for line in lines ]
-    #    for o in drawObjects:
-    #        o.Draw()
-
-    #    for i_der, der in enumerate(derivatives):
-    #        c1.cd(i_der+1+len(derivatives))
-    #        l = ROOT.TLegend(0.6,0.75,0.9,0.9)
-    #        stuff.append(l)
-    #        l.SetNColumns(1)
-    #        l.SetFillStyle(0)
-    #        l.SetShadowColor(ROOT.kWhite)
-    #        l.SetBorderSize(0)
-    #        l.AddEntry( th1d_truth[der], "R("+tex_name+")")
-    #        l.AddEntry( th1d_pred[der],  "#hat{R}("+tex_name+")")
-    #        ROOT.gStyle.SetOptStat(0)
-    #        th1d_pred[der].Draw("hist")
-    #        th1d_truth[der].Draw("histsame")
-    #        ROOT.gPad.SetLogy(logZ)
-    #        l.Draw()
-
-
-    #    plot_directory_ = os.path.join( plot_directory, "training_plots", "log" if logZ else "lin" )
-    #    os.makedirs( plot_directory_, exist_ok=True)
-    #    helpers.copyIndexPHP( plot_directory_ )
-    #    c1.Print( os.path.join( plot_directory_, "training_2D_epoch_%05i.png"%(epoch) ) )
-    #    syncer.makeRemoteGif(plot_directory_, pattern="training_2D_epoch_*.png", name="training_2D_epoch" )
 
     for observables, observable_features, postfix in [
         #( model.observers if hasattr(model, "observers") else [], observers, "_observers"),
