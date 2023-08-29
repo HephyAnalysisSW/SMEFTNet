@@ -6,6 +6,7 @@ import numpy as np
 import math
 import array
 import sys, os, copy
+import operator, functools
 
 sys.path.insert(0, '..')
 import tools.syncer as syncer
@@ -23,7 +24,7 @@ import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument("--plot_directory",     action="store",      default="SMEFTNet",     help="plot sub-directory")
 argParser.add_argument("--model",              action="store",      default="WZto2L_HT300",   help="Which model?")
-argParser.add_argument("--WCs",                action="store",      nargs="*", default="WZto2L_HT300",   help="Which wilson coefficients?")
+argParser.add_argument("--WCs",                action="store",      nargs="*", default=["ctGRe"],   help="Which wilson coefficients?")
 argParser.add_argument("--prefix",             action="store",      default="v6", type=str,  help="prefix")
 
 args = argParser.parse_args()
@@ -34,7 +35,24 @@ exec('import models.%s as model'%(args.model))
 plot_directory = os.path.join( user.plot_directory, args.plot_directory, args.prefix, args.model )
 os.makedirs( plot_directory, exist_ok=True)
 
-features, _, coeffs = model.getEvents(model.data_generator[-1])
+def getEvents( data ):
+    coeffs       = model.data_generator.vector_branch(     data, 'p_C', padding_target=len(model.weightInfo.combinations))
+    features     = model.data_generator.scalar_branches(   data, model.feature_names )
+    vectors      = None #{key:model.data_generator.vector_branch(data, key ) for key in vector_branches}
+
+    return features, vectors, coeffs
+
+features, _, coeffs = getEvents(model.data_generator[-1])
+
+def getWeights( eft, coeffs, lin=False):
+
+    if lin:
+        combs = list(filter( lambda c:len(c)<2, model.weightInfo.combinations))
+    else:
+        combs = model.weightInfo.combinations
+    fac = np.array( [ functools.reduce( operator.mul, [ (float(eft[v]) - model.weightInfo.ref_point_coordinates[v]) for v in comb ], 1 ) for comb in combs], dtype='float')
+    #print (fac)
+    return np.matmul(coeffs[:,:len(combs)], fac)
 
 # Text on the plots
 def drawObjects( offset=0 ):
@@ -59,7 +77,7 @@ stuff = []
 h    = {}
 
 sm = model.make_eft()
-weights     = model.getWeights( sm, coeffs)
+weights     = getWeights( sm, coeffs)
 
 for i_WC, WC in enumerate(args.WCs):
 
@@ -68,7 +86,7 @@ for i_WC, WC in enumerate(args.WCs):
     for i_feature, feature in enumerate(model.feature_names):
         h[WC][feature]      = ROOT.TH1F(WC+'_'+feature,WC+'_'+feature+'', *model.plot_options[feature]['binning'] )
 
-    scores = .5*(model.getWeights( model.make_eft(**{WC:1}), coeffs) - model.getWeights( model.make_eft(**{WC:-1}), coeffs))/weights
+    scores = .5*(getWeights( model.make_eft(**{WC:1}), coeffs) - getWeights( model.make_eft(**{WC:-1}), coeffs))/weights
 
     for i_feature, feature in enumerate(model.feature_names):
         binning = model.plot_options[feature]['binning']

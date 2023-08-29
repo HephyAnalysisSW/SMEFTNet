@@ -15,7 +15,7 @@ if __name__=="__main__":
 from tools.DataGenerator import DataGenerator
 from tools.WeightInfo    import WeightInfo
 
-selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_matched_hadV_parton<0.6)
+selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_matched_hadV_parton<0.6) & (ar.parton_hadV_pdgId<0)
 
 import tools.user as user
 from plot_options import *
@@ -25,7 +25,7 @@ data_generator = DataGenerator(
         n_split = -1,
         splitting_strategy = "files",
         selection   = selection,
-        branches = list(plot_options.keys()) + ["p_C"]
+        branches = list(plot_options.keys()) + ["p_C", "parton_hadV_pdgId"]
     )
 
 reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WZto2LNoRef_HT300_reweight_card.pkl'

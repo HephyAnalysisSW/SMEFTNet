@@ -30,7 +30,7 @@ argParser.add_argument("--config",              action="store",      default="re
 argParser.add_argument("--prefix",              action="store",      default='closure',                  help="prefix?")
 argParser.add_argument("--training",           action="store",      default="v4_0p8_2020_2020",              help="Which training?")
 argParser.add_argument("--WC",                 action="store",      default="ctWRe", type=str,  help="Which WC?")
-argParser.add_argument("--epochs",             action="store",      nargs="*", type=int,  help="Which epochs to plot?")
+argParser.add_argument("--every",             action="store",      type=int,  default = 5, help="Which epochs to plot?")
 argParser.add_argument('--clip',  action='store', type=float,   default=None)
 #argParser.add_argument("--input_files",        action="store",      default="/scratch-cbe/users/robert.schoefbeck/HadronicSMEFT/predictions/ctGIm/TT01j_HT800_ext_comb/output_*.root", type=str,  help="input files")
 
@@ -38,7 +38,7 @@ args = argParser.parse_args()
 
 exec("import configs.%s as config"%args.config)
 
-#config.data_model.data_generator.reduceFiles(to=10)
+config.data_model.data_generator.reduceFiles(to=10)
 
 # directory for plots
 plot_directory = os.path.join( user.plot_directory, args.plot_directory, args.config, (args.prefix + '_' if args.prefix is not None else '') + args.training)
@@ -59,9 +59,11 @@ model_directory = "/groups/hephy/cms/robert.schoefbeck/NN/models/SMEFTNet/%s/%s/
 files = glob.glob( os.path.join( model_directory, 'epoch-*_state.pt') )
 
 data = config.data_model.data_generator[-1]
-pt, angles, features, _, truth = config.data_model.getEvents(data)
+pt, angles, features, scalar_features, _, truth = config.data_model.getEvents(data)
 weights                        = config.data_model.getWeightDict(data)
-scalar_features                = config.data_model.getScalarFeatures(data)
+observers = list(config.model.plot_options.keys())
+
+observer_features = config.data_model.getScalarFeatures( data, observers ) 
 
 if args.clip is not None:
     len_before = len(pt)
@@ -70,9 +72,10 @@ if args.clip is not None:
     pt          = pt[selection]
     angles      = angles[selection]
     features    = features[selection] if features is not None else None
+    scalar_features  = scalar_features[selection] if scalar_features is not None else None
+    observer_features = observer_features[selection] if observer_features is not None else None
     weights     = {k:v[selection] for k,v in weights.items()}
     truth       = truth[selection]
-    scalar_features = scalar_features[selection]
     print ("Auto clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
 
 # GIF animation
@@ -94,9 +97,7 @@ for i_der, der in enumerate(derivatives):
         color[der] = ROOT.kGreen + i_mixed
         i_mixed+=1
 
-every = 5
-
-for i_filename, filename in enumerate(files[0::every]):
+for i_filename, filename in enumerate(files[0::args.every]):
     stuff = []
     epoch = int(filename.split('-')[-1].split('_')[0])
     print('At %s' % filename)
@@ -115,12 +116,18 @@ for i_filename, filename in enumerate(files[0::every]):
     model_state = torch.load(filename, map_location=device)
     model.load_state_dict(model_state)
 
-    predictions = model( pt, angles, features)
+    predictions = model( pt, angles, features=features, scalar_features=scalar_features)
 
     # drop angles
-    predictions = predictions[:,:-2].numpy()
+    if len(model.EC)>0:
+        predictions = predictions[:,:-2].numpy()
+    else:
+        predictions = predictions.numpy()
+
     if predictions.ndim==1:
         predictions=predictions.reshape(-1,1) 
+
+    #print (model.EC[0].mlp.state_dict())
 
     w0 = weights[()]
 
@@ -161,48 +168,10 @@ for i_filename, filename in enumerate(files[0::every]):
     n_pads = len(derivatives)
     n_col  = len(derivatives) 
     n_rows = 2
-    #for logZ in [False, True]:
-    #    c1 = ROOT.TCanvas("c1","multipads",500*n_col,500*n_rows);
-    #    c1.Divide(n_col,n_rows)
 
-    #    for i_der, der in enumerate(derivatives):
-
-    #        c1.cd(i_der+1)
-    #        ROOT.gStyle.SetOptStat(0)
-    #        th2d[der].Draw("COLZ")
-    #        ROOT.gPad.SetLogz(logZ)
-
-    #    lines = [ (0.29, 0.9, 'N_{B} =%5i'%( epoch )) ]
-    #    drawObjects = [ tex.DrawLatex(*line) for line in lines ]
-    #    for o in drawObjects:
-    #        o.Draw()
-
-    #    for i_der, der in enumerate(derivatives):
-    #        c1.cd(i_der+1+len(derivatives))
-    #        l = ROOT.TLegend(0.6,0.75,0.9,0.9)
-    #        stuff.append(l)
-    #        l.SetNColumns(1)
-    #        l.SetFillStyle(0)
-    #        l.SetShadowColor(ROOT.kWhite)
-    #        l.SetBorderSize(0)
-    #        l.AddEntry( th1d_truth[der], "R("+tex_name+")")
-    #        l.AddEntry( th1d_pred[der],  "#hat{R}("+tex_name+")")
-    #        ROOT.gStyle.SetOptStat(0)
-    #        th1d_pred[der].Draw("hist")
-    #        th1d_truth[der].Draw("histsame")
-    #        ROOT.gPad.SetLogy(logZ)
-    #        l.Draw()
-
-
-    #    plot_directory_ = os.path.join( plot_directory, "training_plots", "log" if logZ else "lin" )
-    #    os.makedirs( plot_directory_, exist_ok=True)
-    #    helpers.copyIndexPHP( plot_directory_ )
-    #    c1.Print( os.path.join( plot_directory_, "training_2D_epoch_%05i.png"%(epoch) ) )
-    #    syncer.makeRemoteGif(plot_directory_, pattern="training_2D_epoch_*.png", name="training_2D_epoch" )
-
-    for observables, scalar_features, postfix in [
+    for observables, observable_features, postfix in [
         #( model.observers if hasattr(model, "observers") else [], observers, "_observers"),
-        ( config.data_model.scalar_features, scalar_features, ""),
+        ( observers, observer_features, ""),
             ]:
         if len(observables)==0: continue
         h_w0, h_ratio_prediction, h_ratio_truth, lin_binning = {}, {}, {}, {}
@@ -213,7 +182,7 @@ for i_filename, filename in enumerate(files[0::every]):
             # linspace binning
             lin_binning[feature] = np.linspace(binning[1], binning[2], binning[0]+1)
             #digitize feature
-            binned      = np.digitize(scalar_features[:,i_feature], lin_binning[feature] )
+            binned      = np.digitize(observable_features[:,i_feature], lin_binning[feature] )
             # for each digit, create a mask to select the corresponding event in the bin (e.g. test_features[mask[0]] selects features in the first bin
             mask        = np.transpose( binned.reshape(-1,1)==range(1,len(lin_binning[feature])) )
             h_w0[feature]           = np.array([  w0[m].sum() for m in mask])
@@ -285,14 +254,16 @@ for i_filename, filename in enumerate(files[0::every]):
                 if i_feature==0:
                     l.AddEntry( th1d_yield, "yield (SM)")
 
+                #if epoch == 100 and feature =="delphesJet_lep_cosTheta_n": assert False, ""
+
                 max_ = max( map( lambda h:h.GetMaximum(), list(th1d_ratio_truth.values())+list(th1d_ratio_pred.values()) ))
-                max_ = 10**(1.5)*max_ if logY else 1.5*max_
+                max_ = 10**(1.5)*max_ if logY else (1.5*max_ if max_>0 else 0.75*max_)
                 min_ = min( map( lambda h:h.GetMinimum(), list(th1d_ratio_truth.values())+list(th1d_ratio_pred.values()) ))
                 min_ = 0.1 if logY else (1.5*min_ if min_<0 else 0.75*min_)
 
                 th1d_yield_min = th1d_yield.GetMinimum()
                 th1d_yield_max = th1d_yield.GetMaximum()
-                for bin_ in range(1, th1d_yield.GetNbinsX() ):
+                for bin_ in range(1, th1d_yield.GetNbinsX() + 1):
                     th1d_yield.SetBinContent( bin_, (th1d_yield.GetBinContent( bin_ ) - th1d_yield_min)/th1d_yield_max*(max_-min_)*0.95 + min_  )
 
                 #th1d_yield.Scale(max_/th1d_yield.GetMaximum())

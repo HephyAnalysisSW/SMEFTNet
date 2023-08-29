@@ -6,6 +6,7 @@ import numpy as np
 import math
 import array
 import sys, os, copy
+import functools, operator
 
 sys.path.insert(0, '..')
 import tools.syncer as syncer
@@ -27,13 +28,31 @@ argParser.add_argument("--prefix",             action="store",      default="v5"
 
 args = argParser.parse_args()
 
-exec('import models.%s as model'%(args.model))
-
 # directory for plots
 plot_directory = os.path.join( user.plot_directory, args.plot_directory, args.prefix, args.model )
 os.makedirs( plot_directory, exist_ok=True)
 
-features, _, coeffs = model.getEvents(model.data_generator[-1])
+exec('import models.%s as model'%(args.model))
+#features, _, coeffs = model.getEvents(model.data_generator[-1])
+
+def getEvents( data ):
+    coeffs       = model.data_generator.vector_branch(     data, 'p_C', padding_target=len(model.weightInfo.combinations))
+    features     = model.data_generator.scalar_branches(   data, model.feature_names )
+    vectors      = None #{key:model.data_generator.vector_branch(data, key ) for key in vector_branches}
+
+    return features, vectors, coeffs
+
+features, _, coeffs = getEvents(model.data_generator[-1])
+
+def getWeights( eft, coeffs, lin=False):
+
+    if lin:
+        combs = list(filter( lambda c:len(c)<2, model.weightInfo.combinations))
+    else:
+        combs = model.weightInfo.combinations
+    fac = np.array( [ functools.reduce( operator.mul, [ (float(eft[v]) - model.weightInfo.ref_point_coordinates[v]) for v in comb ], 1 ) for comb in combs], dtype='float')
+    #print (fac)
+    return np.matmul(coeffs[:,:len(combs)], fac)
 
 # Text on the plots
 def drawObjects( offset=0 ):
@@ -91,8 +110,8 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
     #        if eft[param2]-eft_sm[param2] ==0: continue
     #        reweight += (.5 if param1!=param2 else 1)*(eft[param1]-eft_sm[param1])*(eft[param2]-eft_sm[param2])*weights[tuple(sorted((param1,param2)))]
 
-    weights     = model.getWeights( eft, coeffs)
-    weights_lin = model.getWeights( eft, coeffs, lin=True)
+    weights     = getWeights( eft, coeffs)
+    weights_lin = getWeights( eft, coeffs, lin=True)
 
     ## FIXME
     #if i_eft == 0:
@@ -106,11 +125,11 @@ for i_eft, eft_plot_point in enumerate(model.eft_plot_points):
         h[name][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights) )
         h_lin[name][feature] = helpers.make_TH1F( np.histogram(features[:,i_feature], np.linspace(binning[1], binning[2], binning[0]+1), weights=weights_lin) )
 
-        if feature=="parton_hadV_angle_phi": #FIXME
-            h[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights) )
-            h_lin[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights_lin) ) 
-            if not model.plot_options[feature]['tex'].startswith('cos'):
-                model.plot_options[feature]['tex'] = "cos(%s)"%(model.plot_options[feature]['tex'])
+        #if feature=="parton_hadV_angle_phi": #FIXME
+        #    h[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights) )
+        #    h_lin[name][feature] = helpers.make_TH1F( np.histogram(np.cos(features[:,i_feature]), np.linspace(-1,1, 50+1), weights=weights_lin) ) 
+        #    if not model.plot_options[feature]['tex'].startswith('cos'):
+        #        model.plot_options[feature]['tex'] = "cos(%s)"%(model.plot_options[feature]['tex'])
 
         h[name][feature].SetLineWidth(2)
         h[name][feature].SetLineColor( eft_plot_point['color'] )

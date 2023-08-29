@@ -9,11 +9,43 @@ import pickle
 import glob
 import copy
 
-from torch_geometric.nn import MessagePassing, MLP
+from torch_geometric.nn import MessagePassing
 
 import sys
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+from torch_geometric.nn import MLP
+
+### alternative
+#from collections import OrderedDict
+#class MLP(torch.nn.Module):
+#    def __init__(self, layers, dropout=0, batch_norm=True, act="LeakyRelu"):
+#        super(MLP, self).__init__()
+#        layers_ = []
+#
+#        if dropout > 0:
+#            layers_.append( ('dropout', torch.nn.Dropout(p=dropout)) )
+#
+#        if batch_norm:
+#            layers_.append( ('batch_norm', torch.nn.BatchNorm1d(layers[0])) )
+#
+#        for i_layer in range(len(layers)-1):
+#            if act.lower()=="LeakyRelu".lower():
+#                act_ = torch.nn.LeakyReLU(negative_slope=0.3)
+#                layers_.append( ('act'+str(i_layer), act_) )
+#            elif act is None:
+#                pass
+#            else:
+#                raise NotImplementedError
+#
+#            layers_.append( ('dense'+str(i_layer), torch.nn.Linear(layers[i_layer], layers[i_layer+1])) )
+#
+#        self.model = torch.nn.Sequential(OrderedDict(layers_))
+# 
+#    # forward propagate input
+#    def forward(self, x):
+#        return self.model(x)
 
 class EdgeConv(MessagePassing):
     def __init__(self, mlp):
@@ -107,32 +139,48 @@ class EdgeConv(MessagePassing):
 from torch_geometric.nn.pool import radius
 
 class EIRCGNN(EdgeConv):
-    def __init__(self, mlp, dRN=0.4):
+    def __init__(self, mlp, dRN=0.4, include_features_in_radius=()):
         super().__init__(mlp=mlp)
+        # distance
         self.dRN = dRN
+        # tuple index of features that should be included in computing the distance
+        self.include_features_in_radius = include_features_in_radius
 
     def forward(self, x, batch):
 
         # ( pt[1], features, angles[2] )
+        #pt  = x[:,0]
+        # NOTE! The first feature is rho, which is always there. What we call "features" are extra features that start after 1. 
+        #features = x[:,1:-2]
+        #angles = x[:,-2:]
+
         #print ("pt",pt.shape, pt)
-        #print ("features", features.shape, features)
+        #print ("(rho,features)", features.shape, features)
         #print ("angles", angles.shape, angles)
+        #print ("self.include_features_in_radius",self.include_features_in_radius)
 
         max_num_neighbors = max(batch.unique(return_counts=True)[1]).item()
-        edge_index = radius(x[:,-2:], x[:,-2:], r=self.dRN, batch_x=batch, batch_y=batch, max_num_neighbors=max_num_neighbors)
+        if self.include_features_in_radius is not None and len(self.include_features_in_radius)>0:
+            features = x[:,2:-2] # We start taking from "2:" because the first feature in the first EIRCGNN is rho
+            x_radius = torch.stack( [x[:,-2], x[:,-1]] + [features[:, pos] for pos in self.include_features_in_radius] ).transpose(0,1)
+        else:
+            x_radius = x[:,-2:]
+        #print ("x_radius", x_radius.shape, x_radius)
+        edge_index = radius(x_radius, x_radius, r=self.dRN, batch_x=batch, batch_y=batch, max_num_neighbors=max_num_neighbors)
         return super().forward(x, edge_index=edge_index)
-
-norm_kwargs={}#'track_running_stats':False}
 
 class SMEFTNet(torch.nn.Module):
     def __init__(self, 
             num_classes  = 1, 
-            num_features = 0, 
+            num_features = 0,
+            include_features_in_radius = (), 
             num_scalar_features = 0,
             scalar_batch_norm = True, 
             conv_params=( (0.0, [10, 10]), (0.0, [10, 10]) ), 
             dRN=0.4, 
             readout_params=(0.0, [32, 32]), 
+            readout_batch_norm="batch_norm",
+            negative_slope = 0.01,
             learn_from_gamma=False, regression=False):
         super().__init__()
 
@@ -142,6 +190,10 @@ class SMEFTNet(torch.nn.Module):
         self.num_features        = num_features
         self.num_scalar_features = num_scalar_features
         self.scalar_batch_norm   = torch.nn.BatchNorm1d(num_scalar_features) if (num_scalar_features>0 and scalar_batch_norm) else None
+        # tuple index of features that should be included in computing the distance
+        self.include_features_in_radius = include_features_in_radius
+        self.readout_batch_norm = readout_batch_norm 
+        if self.readout_batch_norm and self.scalar_batch_norm: print ("Warning! Two batch norms for scalar features!")
 
         self.EC = torch.nn.ModuleList()
 
@@ -149,17 +201,27 @@ class SMEFTNet(torch.nn.Module):
             hidden_layers_ = copy.deepcopy(hidden_layers)
             hidden_layers_[-1]+=1 # separate output for gamma-coordinate 
             if l==0:
-                self.EC.append( EIRCGNN(MLP([3*(1+num_features) + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu"), dRN=dRN ) )
+                _mlp = MLP([3*(1+num_features) + 2 ]+hidden_layers_, dropout=dropout, act="LeakyRelu")
+                _mlp.act.negative_slope = negative_slope
+                # only include features in radius in the first layer
+                self.EC.append( EIRCGNN( _mlp, dRN=dRN, include_features_in_radius=include_features_in_radius ) )
             else:
-                self.EC.append( EIRCGNN(MLP([3*conv_params[l-1][1][-1]+2]+hidden_layers_,dropout=dropout, act="LeakyRelu"), dRN=dRN ) ) 
+                _mlp = MLP([3*conv_params[l-1][1][-1]+2]+hidden_layers_,dropout=dropout, act="LeakyRelu")
+                _mlp.act.negative_slope = negative_slope
+                self.EC.append( EIRCGNN( _mlp, dRN=dRN ) ) 
 
-        # output features + cos/sin gamma
-        EC_out_chn = hidden_layers[-1]
-        # whether we're going to feed cos/sin gamma
-        if self.learn_from_gamma:
-            EC_out_chn += 2
+        if len(self.EC)>0:
+            # output features + cos/sin gamma
+            EC_out_chn = hidden_layers[-1]
+            # whether we're going to feed cos/sin gamma
+            if self.learn_from_gamma:
+                EC_out_chn += 2
+        else:
+            # the case where we do not have a gNN
+            EC_out_chn = 0
 
-        self.mlp = MLP( [EC_out_chn+self.num_scalar_features]+readout_params[1]+[num_classes], dropout=readout_params[0], act="LeakyRelu",norm_kwargs=norm_kwargs)
+        self.mlp = MLP( [EC_out_chn+self.num_scalar_features]+readout_params[1]+[num_classes], dropout=readout_params[0], act="LeakyRelu",batch_norm=self.readout_batch_norm)
+        self.mlp.act.negative_slope = negative_slope
 
         if not self.regression:
             self.out = torch.nn.Sigmoid()
@@ -183,42 +245,48 @@ class SMEFTNet(torch.nn.Module):
 
     def forward(self, pt, angles, features=None, scalar_features=None, message_logging=False, return_EIRCGNN_output=False):
 
-        # for IRC tests we actually low zero pt. Zero abs angles define the mask
-        mask = (pt != 0)
-        batch= (torch.arange(len(mask)).to(device).view(-1,1)*mask.int())[mask]
+        if len(self.EC)>0:
+            # for IRC tests we actually low zero pt. Zero abs angles define the mask
+            mask = (pt != 0)
+            batch= (torch.arange(len(mask)).to(device).view(-1,1)*mask.int())[mask]
 
-        # we feed pt in col. 0, rho (as feature) in col. 1, then the features, and finally the angles in col. 2,3
-        if features is not None:
-            assert features.shape[2]==self.num_features, "Got %i features but was expecting %i."%( features.shape[1], self.num_features)
-            x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), features[mask], angles[mask]), dim=1)
-        else: 
-            x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), angles[mask]), dim=1)
+            # we feed pt in col. 0, rho (as feature) in col. 1, then the features, and finally the angles in col. 2,3
+            if features is not None:
+                assert features.shape[2]==self.num_features, "Got %i features but was expecting %i."%( features.shape[1], self.num_features)
+                x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), features[mask], angles[mask]), dim=1)
+            else: 
+                x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), angles[mask]), dim=1)
 
-        for l, EC in enumerate(self.EC):
-            EC.message_logging = message_logging
-            x = EC(x, batch)
+            for l, EC in enumerate(self.EC):
+                EC.message_logging = message_logging
+                x = EC(x, batch)
 
-        # global IRC safe message pooling
-        pt = x[:,0] 
-        wj = pt/( torch.zeros_like(batch.unique(),dtype=torch.float).index_add_(0, batch, pt))[batch]
-        if torch.any( torch.isnan(wj)):
-            print ("Warning! Found nan in pt weighted readout. Are there no particles with pt>0?. Replace with zero.")
-            wj = torch.nan_to_num(wj)
+            # global IRC safe message pooling
+            pt = x[:,0] 
+            wj = pt/( torch.zeros_like(batch.unique(),dtype=torch.float).index_add_(0, batch, pt))[batch]
+            if torch.any( torch.isnan(wj)):
+                print ("Warning! Found nan in pt weighted readout. Are there no particles with pt>0?. Replace with zero.")
+                wj = torch.nan_to_num(wj)
 
-        # disregard first column (pt, keep the last two ones: cos/sin gamma)
-        x = torch.zeros((len(batch.unique()),x[:,1:].shape[1]),dtype=torch.float).to(device).index_add_(0, batch, wj.view(-1,1)*x[:,1:])
+            # disregard first column (pt, keep the last two ones: cos/sin gamma)
+            x = torch.zeros((len(batch.unique()),x[:,1:].shape[1]),dtype=torch.float).to(device).index_add_(0, batch, wj.view(-1,1)*x[:,1:])
 
-        # Return only the pooled message, for plotting etc. 
-        if return_EIRCGNN_output:
-            if self.learn_from_gamma == True:
-                return x 
+            # Return only the pooled message, for plotting etc. 
+            if return_EIRCGNN_output:
+                if self.learn_from_gamma == True:
+                    return x 
         # THIS is the default case -> we pass the pooled message through the output MLP & the 'out' layer (except for regression where we don't use the 'out' layer)
-        else:
-            # prepend scalar_features to feed into MLP
-            if scalar_features is not None:
-                y = self.scalar_batch_norm(scalar_features) if self.scalar_batch_norm is not None else scalar_features
-                x = torch.cat( (y, x), 1)
 
+        if scalar_features is not None:
+            y = self.scalar_batch_norm(scalar_features) if self.scalar_batch_norm is not None else scalar_features
+            if len(self.EC)>0:
+                # prepend scalar_features to feed into MLP
+                x = torch.cat( (y, x), 1)
+            else:
+                # we only have scalar features, no gNN poresent
+                x = y
+
+        if len(self.EC)>0:
             if self.learn_from_gamma == True:
                 if self.regression: 
                     return torch.cat( (self.mlp( x ), x[:, -2:]), dim=1)
@@ -229,6 +297,14 @@ class SMEFTNet(torch.nn.Module):
                     return torch.cat( (self.mlp( x[:, :-2] ), x[:, -2:]), dim=1)
                 else:
                     return torch.cat( (self.out(self.mlp( x[:, :-2] )), x[:, -2:]), dim=1)
+        else:
+            if self.learn_from_gamma == True:
+                raise RuntimeError( "No EC layer, can't learn from gamma!" )           
+            else:
+                if self.regression: 
+                    return self.mlp( x ).view(-1,1)
+                else:
+                    return self.out(self.mlp( x[:, :-2] )).view(-1,1)
 
     # intercept EIRCGNN output
     def EIRCGNN_output( self, pt, angles, message_logging=False):

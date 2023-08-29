@@ -184,13 +184,19 @@
 #python animation_closure.py --clip 0.01 --config regress_genTops_lin_ctWRe_pt5_features_pt --training tc1pm2_v4_0p8_2020
 #python animation_closure.py --clip 0.01 --config regress_genTops_lin_ctWRe_pt5_features_pt --training tc1pm2_v4_0p8_2020_2020
 
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010_1010
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010_2020
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_2020
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_2020_2020
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010_1010
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010_2020
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_2020
-python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_2020_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010_1010
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_1010_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p4_2020_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010_1010
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_1010_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_2020
+#python animation_closure.py --config regress_genTops_lin_ctWRe_pt5_TI --training 0p5_2020_2020
+
+python animation_closure.py --config regress_ttbar_lin_ctGRe --training tc1pm5_0p4_1010      --clip 0.05 --WC ctGRe 
+python animation_closure.py --config regress_ttbar_lin_ctGRe --training tc1pm5_0p4_2020      --clip 0.05 --WC ctGRe 
+python animation_closure.py --config regress_ttbar_lin_ctGRe --training tc1pm5_0p4_1010_1010 --clip 0.05 --WC ctGRe 
+python animation_closure.py --config regress_ttbar_lin_ctGRe --training tc1pm5_0p4_1010_2020 --clip 0.05 --WC ctGRe 
+python animation_closure.py --config regress_ttbar_lin_ctGRe --training tc1pm5_0p4_2020_2020 --clip 0.05 --WC ctGRe 

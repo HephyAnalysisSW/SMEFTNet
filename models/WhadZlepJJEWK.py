@@ -15,18 +15,26 @@ if __name__=="__main__":
 from tools.DataGenerator import DataGenerator
 from tools.WeightInfo    import WeightInfo
 
-selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_matched_hadV_parton<0.6)
+selection = lambda ar: (ar.delphesJet_dR_hadV_maxq1q2<0.6) & (ar.delphesJet_dR_matched_hadV_parton<0.6) & (ar.isVBS==1)
 
 import tools.user as user
 from plot_options import *
+vbs_branches = ["isVBS", "vbsJet1_VV_Phi", "vbsJet1_VV_Theta", "vbsJet1_VV_Dy", "vbsJet1_VV_dPhi_q1"]
 
 data_generator =  DataGenerator(
-    input_files = [os.path.join( user.data_directory, "v6/WhadZlepJJEWK/*.root")],
+        input_files = [os.path.join( user.data_directory, "v6/WhadZlepJJEWK/*.root")],
         n_split = -1,
         splitting_strategy = "files",
-        selection= selection,
-        branches = list(plot_options.keys()) + ["p_C"]
+        selection   = selection,
+        branches = list(plot_options.keys()) + ["p_C"] + vbs_branches
     )
+
+plot_options.update({
+    "vbsJet1_VV_Phi":                {'binning':[20, -math.pi,math.pi], 'tex':'#phi(VBS j_{1}) VV'},
+    "vbsJet1_VV_Theta":                {'binning':[20, 0., math.pi], 'tex':'#Theta(VBS j_{1}) VV'},
+    "vbsJet1_VV_Dy":                {'binning':[50, -6, 6], 'tex':'#Delta y(VBS j_{1}, gen-jet) VV'},
+    "vbsJet1_VV_dPhi_q1":            {'binning':[20, 0.,math.pi], 'tex':'#Delta #phi(VBS j_{1}, q1) VV'},
+    })
 
 reweight_pkl = '/eos/vbc/group/cms/robert.schoefbeck/gridpacks/ParticleNet/WhadZlepJJEWKNoRef_reweight_card.pkl'
 
