@@ -252,7 +252,7 @@ class SMEFTNet(torch.nn.Module):
 
             # we feed pt in col. 0, rho (as feature) in col. 1, then the features, and finally the angles in col. 2,3
             if features is not None:
-                assert features.shape[2]==self.num_features, "Got %i features but was expecting %i."%( features.shape[1], self.num_features)
+                assert features.shape[2]==self.num_features, "Got %i features but was expecting %i."%( features.shape[2], self.num_features)
                 x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), features[mask], angles[mask]), dim=1)
             else: 
                 x = torch.cat( (pt[mask].view(-1,1), torch.view_as_complex( angles[mask] ).abs().view(-1,1), angles[mask]), dim=1)

@@ -2,6 +2,7 @@ import pickle
 import random
 import ROOT
 import os
+from math import pi
 
 if __name__=="__main__":
     import sys
@@ -49,7 +50,8 @@ selection = lambda ar: (ar.genJet_pt>500) & (ar.genJet_SDmass>0) & (abs(ar.dR_ge
 import tools.user as user
 
 scalar_features = [   
-    "genJet_pt", "dR_genJet_maxq1q2b", "genJet_mass", "genJet_nConstituents", "genJet_SDmass", "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_SDsubjet1_mass", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
+    "parton_top_decayAngle_theta", "parton_top_decayAngle_phi", "genJet_eta", "genJet_pt", "dR_genJet_maxq1q2b", "genJet_mass", "genJet_nConstituents", "genJet_SDmass", "genJet_SDsubjet0_deltaEta", "genJet_SDsubjet0_deltaPhi", "genJet_SDsubjet0_deltaR", "genJet_SDsubjet0_mass", "genJet_SDsubjet1_deltaEta", "genJet_SDsubjet1_deltaPhi", "genJet_SDsubjet1_deltaR", "genJet_SDsubjet1_mass", "genJet_tau1", "genJet_tau2", "genJet_tau3", "genJet_tau4", "genJet_tau21", "genJet_tau32", "genJet_ecf1", "genJet_ecf2", "genJet_ecf3", "genJet_ecfC1", "genJet_ecfC2", "genJet_ecfC3", "genJet_ecfD", "genJet_ecfDbeta2", "genJet_ecfM1", "genJet_ecfM2", "genJet_ecfM3", "genJet_ecfM1beta2", "genJet_ecfM2beta2", "genJet_ecfM3beta2", "genJet_ecfN1", "genJet_ecfN2", "genJet_ecfN3", "genJet_ecfN1beta2", "genJet_ecfN2beta2", "genJet_ecfN3beta2", "genJet_ecfU1", "genJet_ecfU2", "genJet_ecfU3", "genJet_ecfU1beta2", "genJet_ecfU2beta2", "genJet_ecfU3beta2", 
+    "parton_q1_pt", "parton_q2_pt", "parton_b_pt", "parton_W_pt",
                     ]
 
 data_generator = DataGenerator(
@@ -72,7 +74,7 @@ def angle( x, y):
 #    return dph + 2*np.pi*(dph < -np.pi) - 2*np.pi*(dph > np.pi)
 
 class genTopsModel:
-    def __init__( self, min_pt = 0, padding=100, small=False, features = [], truth_interval = None):
+    def __init__( self, min_pt = 0, padding=100, small=False, features = [], truth_interval = None, truth = 'ctWRe'):
         self.scalar_features = scalar_features
         self.features = features
         self.padding  = padding
@@ -80,6 +82,7 @@ class genTopsModel:
         self.truth_interval = truth_interval
         self.data_generator = data_generator 
         self.data_generator.branches += features 
+        self.truth = truth
 
     def set_truth_mask( self, truth):
         self.mask = torch.ones(len(truth),dtype=bool).to(device)
@@ -93,7 +96,12 @@ class genTopsModel:
     def getEvents(self, data):
         ctwRe_coeff = DataGenerator.vector_branch( data, 'ctWRe_coeff',padding_target=3 )
         weights = ctwRe_coeff[:, 0]
-        truth = torch.Tensor(ctwRe_coeff[:, 1]).to(device)
+
+        if self.truth == 'ctWRe':
+            truth = torch.Tensor(ctwRe_coeff[:, 1]).to(device)
+        else:
+            truth = torch.Tensor(DataGenerator.scalar_branches( data, [self.truth] )[:,0]).to(device)
+
         self.set_truth_mask(truth)
         #truth = -0.15*torch.ones_like(truth)
 
@@ -151,10 +159,17 @@ eft_plot_points = [
 
 plot_options =  {
     "genJet_pt"                 :{'binning':[50,500,2000], 'tex':'p_{T}(jet)'},
+    "genJet_eta"                :{'binning':[50,-3,3], 'tex':'#eta(jet)'},
     "genJet_mass"               :{'binning':[50,150,200], 'tex':'M(jet) unpruned'},
     "genJet_nConstituents"      :{'binning':[50,30,230], 'tex':'n-constituents'},
     "genJet_SDmass"             :{'binning':[50,150,200], 'tex':'M_{SD}(jet)'},
     "dR_genJet_maxq1q2b"        :{'binning':[50,0,1], 'tex':'max #Delta R(jet, q1/q2/b})'},
+    "parton_top_decayAngle_theta":{'binning':[50,0,pi], 'tex':'#theta(t-decay)'},
+    "parton_top_decayAngle_phi" :{'binning':[50,-pi,pi], 'tex':'#phi(t-decay)'},
+    "parton_q1_pt"              :{'binning':[50,0,300], 'tex':'p_{T}(q_1)'},
+    "parton_q2_pt"              :{'binning':[50,0,300], 'tex':'p_{T}(q_2)'}, 
+    "parton_b_pt"               :{'binning':[50,0,300], 'tex':'p_{T}(b)'},
+    "parton_W_pt"               :{'binning':[50,0,300], 'tex':'p_{T}(W)'},
     "genJet_SDsubjet0_deltaEta" :{'binning':[50,-0.6,0.6], 'tex':'#Delta#eta(jet,jet_{SD,0})'},
     "genJet_SDsubjet0_deltaPhi" :{'binning':[50,-0.6,0.6], 'tex':'#Delta#phi(jet,jet_{SD,0})'},
     "genJet_SDsubjet0_deltaR"   :{'binning':[50,0,0.7], 'tex':'#Delta R(jet,jet_{SD,0})'},
@@ -197,6 +212,7 @@ plot_options =  {
     "genJet_ecfU2beta2"         :{'binning':[50,0,0.04], 'tex':"ecfU2beta2"},
     "genJet_ecfU3beta2"         :{'binning':[50,0,0.004], 'tex':"ecfU3beta2"},
 }
+feature_names   = list(plot_options.keys())
 
 if __name__=="__main__":
    

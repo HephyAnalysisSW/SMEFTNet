@@ -7,3 +7,4 @@
 #python feature_plots.py --prefix v6_v3 --model WZto2L_HT300_Ref
 
 python feature_plots.py --prefix v11 --model delphesTTbar  
+python feature_plots.py --prefix v11 --model genTops  

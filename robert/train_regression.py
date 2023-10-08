@@ -37,8 +37,6 @@ torch.manual_seed(0)
 import numpy as np
 np.random.seed(0)
 
-###################### Micro MC Toy Data #########################
-import MicroMC
 ########################## directories ###########################
 model_directory = os.path.join( user.model_directory, 'SMEFTNet',  args.config, args.prefix)
 os.makedirs( model_directory, exist_ok=True)
