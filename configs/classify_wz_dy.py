@@ -14,7 +14,7 @@ import ROOT
 import tools.helpers as helpers
 ROOT.gROOT.SetBatch(True)
 
-from models.WZModel import WZModel
+from models.WZandDYModel import WZandDYModel
 import matplotlib.pyplot as plt 
 
 import SMEFTNet
@@ -58,7 +58,11 @@ def get_model( dRN, conv_params, readout_params):
 #     target    = weights[:,1]
 #     return torch.mean( weight_sm*torch.abs( out[:,0] - target ))
 
+#loss = torch.nn.CrossEntropyLoss()
+
 def loss( out, truth, weights=None):
-    weight_sm = weights[:,0]
-    target    = weights[:,1]
-    return torch.mean( weight_sm*( out[:,0] - target )**2)
+    #weight_sm = weights[:,0]
+    #target    = weights[:,1]
+    #print (out)
+    #print( truth)
+    return - torch.sum( truth*torch.log( out ) +(1-truth)*torch.log(1-out) )

@@ -2,6 +2,7 @@
 
 import os
 import glob
+import random
 
 # Logging
 import logging
@@ -40,6 +41,7 @@ class DataGenerator(Sequence):
             selection           = None,
             max_files           = None,
             verbose             = False,
+            shuffle             = False,
                 ):
         '''
         DataGenerator for the keras training framework.
@@ -63,11 +65,14 @@ class DataGenerator(Sequence):
 
         self.input_files = self.input_files[:max_files]
 
+        random.shuffle( self.input_files )
+
         self.splitting_strategy = splitting_strategy
         if splitting_strategy.lower() not in ['files', 'events']:
             raise RuntimeError("'splitting_strategy' must be 'files' or 'events'")
 
         self.verbose = verbose
+        self.shuffle = shuffle
 
         # split per file
         if splitting_strategy == "files" and n_split<0:
@@ -132,9 +137,16 @@ class DataGenerator(Sequence):
             entry_stop = min( entry_stop, entry_start+small )
 
         self.index = index
-        self.data  = self.array[entry_start:entry_stop]
 
-        return self.data
+        if self.shuffle:
+            if not hasattr( self, "permutation" ):
+                self.permutation = np.random.permutation(range(len(self.array)))
+
+            self.data  = self.array[self.permutation][entry_start:entry_stop]
+            return self.data
+        else:
+            self.data  = self.array[entry_start:entry_stop]
+            return self.data
 
     def __getitem__(self, index):
         if index == self.index:
