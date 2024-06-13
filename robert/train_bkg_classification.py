@@ -12,7 +12,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--overwrite', action='store_true', default=False, help="restart training?")
 parser.add_argument('--prefix',    action='store', default='v1', help="Prefix for training?")
-parser.add_argument('--config',    action='store', default='regressJet', help="Which config?")
+parser.add_argument('--config',    action='store', default='classify_wz_dy', help="Which config?")
 parser.add_argument('--learning_rate', '--lr',    action='store', type=float, default=0.001, help="Learning rate")
 parser.add_argument('--epochs', action='store', default=100, type=int, help="Number of epochs.")
 #parser.add_argument('--load_every', action='store', default=5, type=int, help="Load new chunk of data every this number of epochs.")
@@ -84,28 +84,23 @@ if not args.overwrite:
 ########################  Training loop ##########################
 
 # read all data
-#pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[0])
-#train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8
 
-#assert False, ""
-
-if args.small:
-    config.data_model.data_generator.reduceFiles(to=1)
+#if args.small:
+#    config.data_model.data_generator.reduceFiles(to=5)
+#    config.data_model.bkg_generator.reduceFiles(to=5)
 
 #data_counter=0
 for epoch in range(epoch_min, args.epochs):
 
-    #if epoch%args.load_every==0 or epoch==epoch_min:
-    #    pt, angles, weights, truth = config.data_model.getEvents(config.data_model.data_generator[data_counter])
-    #    data_counter+=1
-    #    if data_counter == len(config.data_model.data_generator): data_counter=0
- 
-    #    train_mask = torch.FloatTensor(pt.shape[0]).uniform_() < 0.8 
-    #    print ("New training and test dataset.")
     n_samples = 0
     optimizer.zero_grad()
+
+    #i_data = 0
+    data  = config.data_model.data_generator[0]
     for i_data, data in enumerate(config.data_model.data_generator):
-        pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(data)
+    #if True:
+        pt, angles, features, scalar_features, weights, truth = config.data_model.getEvents(config.data_model.data_generator[i_data])
+        #print ("Signal events:", torch.count_nonzero(truth).item(), "Bkg events: ", torch.count_nonzero(~truth).item())
         if args.clip is not None:
             len_before = len(pt)
             #selection = helpers.clip_quantile( config.data_model.getScalarFeatures( data ), args.clip, return_selection = True )
@@ -113,7 +108,7 @@ for epoch in range(epoch_min, args.epochs):
             pt          = pt[selection]
             angles      = angles[selection]
             features    = features[selection] if features is not None else None
-            scalar_features    = scalar_features[selection] if scalar_features is not None else None
+            scalar_features = scalar_features[selection] if scalar_features is not None else None
             weights     = weights[selection]
             truth       = truth[selection]
             #print ("Weight clip efficiency (training) %4.3f is %4.3f"%( args.clip, len(pt)/len_before) )
@@ -128,7 +123,10 @@ for epoch in range(epoch_min, args.epochs):
             angles=angles[train_mask],
             features=features[train_mask] if features is not None else None,
             scalar_features=scalar_features[train_mask] if scalar_features is not None else None,)
-        loss = config.loss(out, truth[train_mask], weights[train_mask] if weights is not None else None)
+        loss = config.loss(
+                    out[:,0], truth[train_mask].float(), 
+                    #weight = (weights[train_mask] if weights is not None else None )
+                    )
         n_samples += len(out)
         loss.backward()
 
@@ -140,7 +138,9 @@ for epoch in range(epoch_min, args.epochs):
                 scalar_features=scalar_features[~train_mask] if scalar_features is not None else None,)
 
             scale_test_train = len(out)/(len(out_test))
-            loss_test = config.loss( out_test, truth[~train_mask], weights[~train_mask] if weights is not None else None)
+            loss_test = config.loss( out_test[:,0], truth[~train_mask].float(), 
+                #weights[~train_mask] if weights is not None else None,
+                )
             loss_test*=scale_test_train
      
             if not "test_losses" in model.cfg_dict:
@@ -158,7 +158,7 @@ for epoch in range(epoch_min, args.epochs):
                     loss.item(), loss_test.item(), 
                     model.cfg_dict["train_losses"] [-1], model.cfg_dict["test_losses" ][-1]), 
                     end="\r")
-    print ("mean(truth), mean(out)", truth.mean().item(), out[:,0].mean().item())
+    print ("mean(truth), mean(out)", truth.float().mean().item(), out[:,0].mean().item())
     optimizer.step()
 
     print ("")

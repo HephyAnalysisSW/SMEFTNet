@@ -85,6 +85,7 @@ class delphesTTbarModel:
     def __init__( self, min_pt = 0, padding=100, small=False, features = [], scalar_features = [], 
             truth_interval = None,
             train_with_truth = False,
+            closest_truth_parton_label = False,
             ):
         self.scalar_features= scalar_features
         self.features       = features
@@ -94,12 +95,18 @@ class delphesTTbarModel:
         self.data_generator = data_generator 
         self.data_generator.branches += features 
 
+        # add label of closest parton
+        self.closest_truth_parton_label = closest_truth_parton_label
+        if closest_truth_parton_label:
+            self.data_generator.branches += [ "top_daughter_partons_cosTheta_r", "top_daughter_partons_cosTheta_n", "top_daughter_partons_cosTheta_k"]
+
+        # scalar features
         if scalar_features is not None and len(scalar_features)>0:
             self.scalar_features = scalar_features
             if not type(self.scalar_features)==type([]): raise RuntimeError ("Need a list of scalar features")
             for feature in scalar_features:
-                if feature not in branches:
-                    branches.append( feature)
+                if feature not in self.data_generator.branches:
+                    self.data_generator.branches.append(feature)
         else:
             self.scalar_features = None
 
@@ -122,14 +129,42 @@ class delphesTTbarModel:
         #truth = -0.15*torch.ones_like(truth)
 
         pts = DataGenerator.vector_branch( data, 'eflow_pt',padding_target=self.padding )
-        ptmask =  torch.Tensor((pts >= self.min_pt)).to(device) #  (pts > 5)
+        ptmask =  torch.Tensor((pts >= self.min_pt)).to(device) #  (pts > 5) 
         ctn = DataGenerator.vector_branch( data, 'eflow_cosTheta_n',padding_target=self.padding ) # [ptmask]
         ctr = DataGenerator.vector_branch( data, 'eflow_cosTheta_r',padding_target=self.padding ) # [ptmask
         pts  = torch.Tensor(pts).to(device) * ptmask  
         ctn  = torch.Tensor(ctn).to(device) * ptmask  
         ctr  = torch.Tensor(ctr).to(device) * ptmask  
         #return pts, torch.stack( (dphis, detas), axis=-1), torch.tensor(weights).to(device), torch.tensor(truth).to(device)
-        
+
+        closest_truth_parton_label = None
+        if self.closest_truth_parton_label:
+            ctk = DataGenerator.vector_branch( data, 'eflow_cosTheta_k',padding_target=self.padding ) 
+            ctk = torch.Tensor(ctk).to(device) * ptmask  
+
+            ctn_partons     = DataGenerator.vector_branch( data, 'top_daughter_partons_cosTheta_n',padding_target=3 ) 
+            ctn_partons     = torch.Tensor(ctn_partons).to(device) 
+            ctn_q1_parton   = ctn_partons[:,0].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctn_q2_parton   = ctn_partons[:,1].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctn_b_parton    = ctn_partons[:,2].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctr_partons     = DataGenerator.vector_branch( data, 'top_daughter_partons_cosTheta_r',padding_target=3 ) 
+            ctr_partons     = torch.Tensor(ctr_partons).to(device) 
+            ctr_q1_parton   = ctr_partons[:,0].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctr_q2_parton   = ctr_partons[:,1].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctr_b_parton    = ctr_partons[:,2].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctk_partons     = DataGenerator.vector_branch( data, 'top_daughter_partons_cosTheta_k',padding_target=3 ) 
+            ctk_partons     = torch.Tensor(ctk_partons).to(device)
+            ctk_q1_parton   = ctk_partons[:,0].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctk_q2_parton   = ctk_partons[:,1].unsqueeze(1).repeat(1,self.padding)*ptmask
+            ctk_b_parton    = ctk_partons[:,2].unsqueeze(1).repeat(1,self.padding)*ptmask
+
+            dr_q1 = torch.sqrt((ctn - ctn_q1_parton)**2 + (ctr - ctr_q1_parton)**2 + (ctk - ctk_q1_parton)**2)
+            dr_q2 = torch.sqrt((ctn - ctn_q2_parton)**2 + (ctr - ctr_q2_parton)**2 + (ctk - ctk_q2_parton)**2)
+            dr_b  = torch.sqrt((ctn - ctn_b_parton)**2  + (ctr - ctr_b_parton)**2  + (ctk - ctk_b_parton)**2)
+
+
+            closest_truth_parton_label = torch.stack( (-dr_q1, -dr_q2, -dr_b) ).argmax(0)
+
         features = None
         for feature in self.features: 
             branch_data = DataGenerator.vector_branch( data, feature, padding_target=self.padding ) 
@@ -137,6 +172,11 @@ class delphesTTbarModel:
                 features = (torch.Tensor(branch_data).to(device) * ptmask).view(-1,self.padding,1)
             else:
                 features = torch.cat( (features, (torch.Tensor(branch_data).to(device)* ptmask).view(-1,self.padding,1)), dim=2)
+        if closest_truth_parton_label is not None:
+            if features is None:
+                features = closest_truth_parton_label
+            else:
+                features = torch.cat( (features, closest_truth_parton_label.view(-1,self.padding,1)), dim=2)
 
         if self.scalar_features:
             scalar_features = torch.Tensor(DataGenerator.scalar_branches(data, self.scalar_features)).to(device)

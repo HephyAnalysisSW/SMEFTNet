@@ -25,6 +25,7 @@ argParser = argparse.ArgumentParser(description = "Argument parser")
 argParser.add_argument("--plot_directory",     action="store",      default="SMEFTNet",     help="plot sub-directory")
 argParser.add_argument("--model",              action="store",      default="WZto2L_HT300",   help="Which model?")
 argParser.add_argument("--WCs",                action="store",      nargs="*", default=["ctGRe"],   help="Which wilson coefficients?")
+argParser.add_argument("--quadratic",          action="store_true",   help="Quadratic?")
 argParser.add_argument("--prefix",             action="store",      default="v6", type=str,  help="prefix")
 
 args = argParser.parse_args()
@@ -86,7 +87,11 @@ for i_WC, WC in enumerate(args.WCs):
     for i_feature, feature in enumerate(model.feature_names):
         h[WC][feature]      = ROOT.TH1F(WC+'_'+feature,WC+'_'+feature+'', *model.plot_options[feature]['binning'] )
 
-    scores = .5*(getWeights( model.make_eft(**{WC:1}), coeffs) - getWeights( model.make_eft(**{WC:-1}), coeffs))/weights
+    if args.quadratic:
+        scores = .5*(getWeights( model.make_eft(**{WC:1}), coeffs) + getWeights( model.make_eft(**{WC:-1}), coeffs) -2*getWeights( model.make_eft(), coeffs))/weights
+    else:
+        scores = .5*(getWeights( model.make_eft(**{WC:1}), coeffs) - getWeights( model.make_eft(**{WC:-1}), coeffs))/weights
+
 
     for i_feature, feature in enumerate(model.feature_names):
         binning = model.plot_options[feature]['binning']
@@ -131,7 +136,7 @@ for i_feature, feature in enumerate(model.feature_names):
             c1.SetLogy(logY)
         l.Draw()
 
-        plot_directory_ = os.path.join( plot_directory, "expected_score_plots", "log" if logY else "lin" )
+        plot_directory_ = os.path.join( plot_directory, "expected_score_plots"+("_quadratic" if args.quadratic else ""), "log" if logY else "lin" )
         helpers.copyIndexPHP( plot_directory_ )
         c1.Print( os.path.join( plot_directory_, feature+'.png' ))
 

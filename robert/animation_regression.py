@@ -20,6 +20,7 @@ parser.add_argument('--training', action='store', default='v4_0p4_2020_2020')
 parser.add_argument('--xmin', action='store', default=-.5, type=float)
 parser.add_argument('--xmax', action='store', default=+.5, type=float)
 parser.add_argument('--nBins', action='store', default=20, type=int)
+parser.add_argument('--every', action='store', default=5, type=int)
 parser.add_argument('--varName', action='store', default='C_{tG}^{Re}', help="Which prefix?")
 
 args = parser.parse_args()
@@ -32,7 +33,6 @@ delay  = 50/5
 #varName = "C_{tW}^{Re}"
 index_truth = 0
 index_out   = 0
-every = 5
 #logZ=False
 def func( out ):
     return out[:, 0] 
@@ -66,7 +66,7 @@ tex.SetNDC()
 tex.SetTextSize(0.04)
 
 c1 = ROOT.TCanvas()
-for i_filename,  filename in enumerate(files[0::every]):
+for i_filename,  filename in enumerate(files[0::args.every]):
     load_epoch = int(filename.split('-')[-1].split('_')[0])
     print('At %s' % filename)
     if i_filename==0:
